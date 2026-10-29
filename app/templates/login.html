@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Basecamp Radar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-950 flex items-center justify-center">
+  <div class="w-full max-w-sm">
+    <div class="text-center mb-8">
+      <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-lg font-bold text-white mx-auto mb-4">BR</div>
+      <h1 class="text-xl font-bold text-white">Basecamp Radar</h1>
+      <p class="text-sm text-slate-300 mt-1">Sign in to continue</p>
+    </div>
+
+    <form action="/login" method="post" class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
+      {% if error %}
+      <div class="bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm rounded-lg px-4 py-3 mb-4">
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <div class="mb-4">
+        <label for="password" class="block text-sm font-medium text-slate-300 mb-2">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          required
+          autofocus
+          class="w-full bg-slate-900/60 border border-slate-600/50 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="Enter your password"
+        >
+      </div>
+
+      <button
+        type="submit"
+        class="w-full px-4 py-2.5 bg-blue-800 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+      >
+        Sign In
+      </button>
+    </form>
+  </div>
+</body>
+</html>

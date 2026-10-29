@@ -1,0 +1,43 @@
+<div class="bg-slate-700/30 border border-slate-600/50 rounded-lg p-4 mt-2">
+  <form method="post"
+    action="/accounts/{{ account_id }}/settings"
+    hx-post="/accounts/{{ account_id }}/settings"
+    hx-target="#account-settings"
+    hx-swap="innerHTML">
+    <div class="grid grid-cols-2 gap-4 text-xs">
+      <div>
+        <label class="block text-slate-300 mb-1">Additional Producers</label>
+        <input type="text" name="producers"
+          value="{{ producers | join(', ') if producers else '' }}"
+          placeholder="Comma-separated names"
+          class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent">
+        <p class="text-slate-400 mt-0.5">Names to monitor for direct mentions (superiors, other DPs)</p>
+      </div>
+      <div>
+        <label class="block text-slate-300 mb-1">Poll interval override (min)</label>
+        <input type="number" name="poll_interval_minutes"
+          value="{{ poll_interval_minutes or '' }}"
+          placeholder="Use global default" min="5"
+          class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent">
+        <p class="text-slate-400 mt-0.5">Leave blank for global interval</p>
+      </div>
+    </div>
+    <div class="mt-3 text-xs">
+      <span class="text-slate-400">Projects:</span>
+      {% for proj in projects %}
+      <span class="text-slate-300 ml-1">{{ proj.type or "—" }} / {{ proj.service_type or "—" }}{% if not loop.last %},{% endif %}</span>
+      {% endfor %}
+    </div>
+    <div class="flex items-center gap-2 mt-3">
+      <button type="submit"
+        class="px-3 py-1.5 text-xs bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors">
+        Save
+      </button>
+      <button type="button"
+        onclick="document.getElementById('account-settings').innerHTML = ''"
+        class="px-3 py-1.5 text-xs text-slate-300 hover:text-white border border-slate-700 hover:border-slate-600 rounded-lg transition-colors">
+        Cancel
+      </button>
+    </div>
+  </form>
+</div>

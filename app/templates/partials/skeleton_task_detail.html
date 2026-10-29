@@ -1,0 +1,48 @@
+<div class="bg-slate-800/50 border border-slate-700/50 rounded-xl sticky top-20 animate-pulse max-h-[calc(100vh-6rem)] flex flex-col overflow-hidden">
+  <!-- Scrollable content -->
+  <div class="flex-1 overflow-y-auto p-5 min-h-0">
+  <!-- Header skeleton -->
+  <div class="flex items-start justify-between mb-4">
+    <div class="flex-1 space-y-2">
+      <div class="h-5 bg-slate-700/50 rounded w-20"></div>
+      <div class="h-5 bg-slate-700/50 rounded w-3/4"></div>
+    </div>
+    <div class="w-12 h-12 rounded-lg bg-slate-700/50"></div>
+  </div>
+
+  <!-- Metadata grid skeleton -->
+  <div class="grid grid-cols-2 gap-3 mb-4">
+    {% for _ in range(6) %}
+    <div class="space-y-1">
+      <div class="h-3 bg-slate-700/50 rounded w-16"></div>
+      <div class="h-4 bg-slate-700/50 rounded w-24"></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Recommendation skeleton -->
+  <div class="mb-4 space-y-1">
+    <div class="h-3 bg-slate-700/50 rounded w-24"></div>
+    <div class="h-16 bg-slate-700/30 rounded-lg"></div>
+  </div>
+
+  <!-- Score bar skeleton -->
+  <div class="mb-4 space-y-2">
+    <div class="h-3 bg-slate-700/50 rounded w-28"></div>
+    <div class="h-2 bg-slate-700/50 rounded-full"></div>
+    <div class="flex gap-3">
+      <div class="h-3 bg-slate-700/50 rounded w-16"></div>
+      <div class="h-3 bg-slate-700/50 rounded w-20"></div>
+      <div class="h-3 bg-slate-700/50 rounded w-14"></div>
+    </div>
+  </div>
+  </div>
+
+  <!-- Pinned actions skeleton -->
+  <div class="flex-shrink-0 px-5 pb-5">
+  <div class="flex gap-2 pt-3 border-t border-slate-700/50">
+    <div class="h-8 bg-slate-700/50 rounded-lg w-32"></div>
+    <div class="h-8 bg-slate-700/50 rounded-lg w-20"></div>
+  </div>
+  </div>
+</div>

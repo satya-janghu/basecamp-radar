@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+
+{% block title %}User Manual — Basecamp Radar{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-3xl">
+  <div>
+    <a href="/settings" class="text-xs text-blue-300 hover:text-blue-200 inline-flex items-center gap-1 transition-colors">&larr; Settings</a>
+    <h1 class="text-xl font-bold text-white mt-1">User Manual</h1>
+    <p class="text-sm text-slate-400 mt-1">Triage workflow, keyboard shortcuts, scoring legend, and filter guide.</p>
+  </div>
+
+  <!-- Table of contents -->
+  <nav class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
+    <h2 class="text-sm font-semibold text-slate-300 mb-3">Contents</h2>
+    <ol class="space-y-1.5 text-sm list-decimal list-inside">
+      <li><a href="#triage" class="text-blue-300 hover:text-blue-200 transition-colors">The Triage Workflow</a></li>
+      <li><a href="#shortcuts" class="text-blue-300 hover:text-blue-200 transition-colors">Keyboard Shortcuts</a></li>
+      <li><a href="#scoring" class="text-blue-300 hover:text-blue-200 transition-colors">AI Analysis &amp; Scoring</a></li>
+      <li><a href="#filters" class="text-blue-300 hover:text-blue-200 transition-colors">Smart Filters</a></li>
+      <li><a href="#voting" class="text-blue-300 hover:text-blue-200 transition-colors">Upvote / Downvote Feedback</a></li>
+    </ol>
+  </nav>
+
+  <!-- Section 1: Triage Workflow -->
+  <section id="triage" class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5 space-y-4">
+    <h2 class="text-base font-semibold text-white">1. The Triage Workflow</h2>
+    <p class="text-sm text-slate-200">A recommended daily routine for staying on top of 800+ tasks across 20+ accounts.</p>
+
+    <ol class="space-y-3 text-sm text-slate-200">
+      <li class="flex gap-3">
+        <span class="text-blue-300 font-semibold shrink-0">1.</span>
+        <div>
+          <span class="text-white font-medium">Start at Morning Briefing</span>
+          <span class="text-slate-400"> — </span>
+          <a href="/briefing" class="text-blue-300 hover:text-blue-200">/briefing</a> shows the top 50 red + orange tasks across all accounts, sorted by score. This is your "what needs attention today" view.
+        </div>
+      </li>
+      <li class="flex gap-3">
+        <span class="text-blue-300 font-semibold shrink-0">2.</span>
+        <div>
+          <span class="text-white font-medium">Use filter pills to narrow</span>
+          <span class="text-slate-400"> — </span>
+          "Ball with Me" shows tasks where you're the next to act. "Blockers" surfaces stuck tasks. "Stale 7d+" finds threads going cold.
+        </div>
+      </li>
+      <li class="flex gap-3">
+        <span class="text-blue-300 font-semibold shrink-0">3.</span>
+        <div>
+          <span class="text-white font-medium">Stack filters for precision</span>
+          <span class="text-slate-400"> — </span>
+          Filters combine with AND logic. "Ball with Me" + "Blockers" = blocked tasks that need your action.
+        </div>
+      </li>
+      <li class="flex gap-3">
+        <span class="text-blue-300 font-semibold shrink-0">4.</span>
+        <div>
+          <span class="text-white font-medium">Star important tasks</span>
+          <span class="text-slate-400"> — </span>
+          Press <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs text-slate-300 border border-slate-600">s</kbd> to star a task and boost its score by +60 (applied when the task also has a qualifying signal such as a blocker, mention, approval request or staleness). Track starred tasks with the "Starred" filter.
+        </div>
+      </li>
+      <li class="flex gap-3">
+        <span class="text-blue-300 font-semibold shrink-0">5.</span>
+        <div>
+          <span class="text-white font-medium">Batch select for bulk actions</span>
+          <span class="text-slate-400"> — </span>
+          Press <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs text-slate-300 border border-slate-600">x</kbd> to toggle selection mode. Select multiple tasks, then star/unstar all or open them in Basecamp.
+        </div>
+      </li>
+      <li class="flex gap-3">
+        <span class="text-blue-300 font-semibold shrink-0">6.</span>
+        <div>
+          <span class="text-white font-medium">Drill into account pages</span>
+          <span class="text-slate-400"> — </span>
+          Visit individual account pages for deeper per-client review. Use tier tabs (<kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs text-slate-300 border border-slate-600">1</kbd>-<kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs text-slate-300 border border-slate-600">4</kbd>) to filter by Urgent, Monitor, or Background tasks.
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- Section 2: Keyboard Shortcuts -->
+  <section id="shortcuts" class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5 space-y-4">
+    <h2 class="text-base font-semibold text-white">2. Keyboard Shortcuts</h2>
+    <p class="text-sm text-slate-400">All shortcuts work when no input field is focused. Press <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs text-slate-300 border border-slate-600">?</kbd> on Account or Briefing pages for a quick reference.</p>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-slate-400 border-b border-slate-700/50">
+            <th class="text-left py-2 pr-4 font-medium">Key</th>
+            <th class="text-left py-2 pr-4 font-medium">Action</th>
+            <th class="text-left py-2 font-medium">Where</th>
+          </tr>
+        </thead>
+        <tbody class="text-slate-300">
+          <tr class="border-b border-slate-700/30">
+            <td class="py-2 pr-4"><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">/</kbd></td>
+            <td class="py-2 pr-4">Open command palette</td>
+            <td class="py-2 text-slate-400">Everywhere</td>
+          </tr>
+          <tr class="border-b border-slate-700/30">
+            <td class="py-2 pr-4"><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">g</kbd> then <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">b</kbd></td>
+            <td class="py-2 pr-4">Go to Briefing</td>
+            <td class="py-2 text-slate-400">Everywhere</td>
+          </tr>
+          <tr class="border-b border-slate-700/30">
+            <td class="py-2 pr-4"><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">g</kbd> then <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">d</kbd></td>
+            <td class="py-2 pr-4">Go to Dashboard</td>
+            <td class="py-2 text-slate-400">Everywhere</td>
+          </tr>
+          <tr class="border-b border-slate-700/30">
+            <td class="py-2 pr-4"><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">g</kbd> then <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">s</kbd></td>
+            <td class="py-2 pr-4">Go to Settings</td>
+            <td class="py-2 text-slate-400">Everywhere</td>
+          </tr>
+          <tr class="border-b border-slate-700/30">
+            <td class="py-2 pr-4"><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">g</kbd> then <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">h</kbd></td>
+            <td class="py-2 pr-4">Go to Manual</td>
+            <td class="py-2 text-slate-400">Everywhere</td>
+          </tr>
+          <tr class="border-b border-slate-700/30">
+            <td class="py-2 pr-4"><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">p</kbd></td>
+            <td class="py-2 pr-4">Trigger poll</td>
+            <td class="py-2 text-slate-400">Everywhere</td>
+          </tr>
+          <tr class="border-b border-slate-700/30">
+            <td class="py-2 pr-4"><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">j</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">k</kbd></td>
+            <td class="py-2 pr-4">Navigate tasks (down / up)</td>
+            <td class="py-2 text-slate-400">Account, Briefing</td>
+          </tr>
+          <tr class="border-b border-slate-700/30">
+            <td class="py-2 pr-4"><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">Enter</kbd></td>
+            <td class="py-2 pr-4">Open task detail</td>
+            <td class="py-2 text-slate-400">Account, Briefing</td>
+          </tr>
+          <tr class="border-b border-slate-700/30">
+            <td class="py-2 pr-4"><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">Esc</kbd></td>
+            <td class="py-2 pr-4">Close panel / exit mode</td>
+            <td class="py-2 text-slate-400">Account, Briefing</td>
+          </tr>
+          <tr class="border-b border-slate-700/30">
+            <td class="py-2 pr-4"><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">o</kbd></td>
+            <td class="py-2 pr-4">Open in Basecamp</td>
+            <td class="py-2 text-slate-400">Account, Briefing</td>
+          </tr>
+          <tr class="border-b border-slate-700/30">
+            <td class="py-2 pr-4"><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">r</kbd></td>
+            <td class="py-2 pr-4">Refresh task</td>
+            <td class="py-2 text-slate-400">Account, Briefing</td>
+          </tr>
+          <tr class="border-b border-slate-700/30">
+            <td class="py-2 pr-4"><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">s</kbd></td>
+            <td class="py-2 pr-4">Toggle star</td>
+            <td class="py-2 text-slate-400">Account, Briefing</td>
+          </tr>
+          <tr class="border-b border-slate-700/30">
+            <td class="py-2 pr-4"><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">x</kbd></td>
+            <td class="py-2 pr-4">Batch select mode</td>
+            <td class="py-2 text-slate-400">Account, Briefing</td>
+          </tr>
+          <tr class="border-b border-slate-700/30">
+            <td class="py-2 pr-4"><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">1</kbd>-<kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">4</kbd></td>
+            <td class="py-2 pr-4">Tier filter tabs (All / Urgent / Monitor / Background)</td>
+            <td class="py-2 text-slate-400">Account only</td>
+          </tr>
+          <tr>
+            <td class="py-2 pr-4"><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-xs border border-slate-600">?</kbd></td>
+            <td class="py-2 pr-4">Quick shortcuts help</td>
+            <td class="py-2 text-slate-400">Account, Briefing</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Section 3: AI Analysis & Scoring -->
+  <section id="scoring" class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5 space-y-5">
+    <h2 class="text-base font-semibold text-white">3. AI Analysis &amp; Scoring</h2>
+    <p class="text-sm text-slate-200">Every task gets a priority score from 0-100. The score combines deterministic signals (staleness, project type) with AI-detected signals (blockers, mentions) from Gemini analysis of the comment thread.</p>
+
+    <!-- Tiers -->
+    <div>
+      <h3 class="text-sm font-semibold text-slate-300 mb-2">Priority Tiers</h3>
+      <div class="space-y-2">
+        <div class="flex items-center gap-3">
+          <span class="w-3 h-3 rounded-full bg-rose-500 shrink-0"></span>
+          <span class="text-sm"><span class="text-rose-300 font-medium">Critical</span> <span class="text-slate-400">(score 80-100)</span> — Act now. Blocked, directly mentioned, or severely stale with multiple signals.</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="w-3 h-3 rounded-full bg-orange-500 shrink-0"></span>
+          <span class="text-sm"><span class="text-orange-300 font-medium">High</span> <span class="text-slate-400">(score 60-79)</span> — Act today. Significant staleness, pending approvals, or important mentions.</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="w-3 h-3 rounded-full bg-amber-500 shrink-0"></span>
+          <span class="text-sm"><span class="text-amber-300 font-medium">Medium</span> <span class="text-slate-400">(score 35-59)</span> — Check this week. Moderate staleness or pending actions.</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="w-3 h-3 rounded-full bg-teal-500 shrink-0"></span>
+          <span class="text-sm"><span class="text-teal-400 font-medium">Low</span> <span class="text-slate-400">(score 15-34)</span> — Monitor. Some activity or minor signals, no immediate action needed.</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="w-3 h-3 rounded-full bg-slate-500 shrink-0"></span>
+          <span class="text-sm"><span class="text-slate-400 font-medium">Minimal</span> <span class="text-slate-400">(score 0-14)</span> — Background. Recently active or waiting on client with no signals.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Score Breakdown Bar -->
+    <div>
+      <h3 class="text-sm font-semibold text-slate-300 mb-2">Score Breakdown Bar</h3>
+      <p class="text-sm text-slate-400 mb-3">The colored bar on each task shows how the score is composed. Each color represents a different signal:</p>
+      <div class="grid grid-cols-2 gap-2 text-sm">
+        <div class="flex items-center gap-2">
+          <span class="w-4 h-3 rounded bg-indigo-500 shrink-0"></span>
+          <span class="text-slate-300">Staleness</span>
+          <span class="text-slate-500 text-xs">— days since last comment</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-4 h-3 rounded bg-sky-500 shrink-0"></span>
+          <span class="text-slate-300">Joint project</span>
+          <span class="text-slate-500 text-xs">— 1.4x multiplier</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-4 h-3 rounded bg-rose-500 shrink-0"></span>
+          <span class="text-slate-300">Blocker / Deadline</span>
+          <span class="text-slate-500 text-xs">— blocked or due soon</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-4 h-3 rounded bg-amber-500 shrink-0"></span>
+          <span class="text-slate-300">Mention / Approval / Star</span>
+          <span class="text-slate-500 text-xs">— named or needs sign-off</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-4 h-3 rounded bg-teal-500 shrink-0"></span>
+          <span class="text-slate-300">Activity</span>
+          <span class="text-slate-500 text-xs">— 3+ comments (graduated)</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-4 h-3 rounded bg-slate-500 shrink-0"></span>
+          <span class="text-slate-300">Ambiguous</span>
+          <span class="text-slate-500 text-xs">— unclear ownership</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-4 h-3 rounded bg-violet-500 shrink-0"></span>
+          <span class="text-slate-300">Ball with producer</span>
+          <span class="text-slate-500 text-xs">— you hold the ball</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-4 h-3 rounded bg-cyan-500 shrink-0"></span>
+          <span class="text-slate-300">Stage</span>
+          <span class="text-slate-500 text-xs">— workflow position</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Signal Pills -->
+    <div>
+      <h3 class="text-sm font-semibold text-slate-300 mb-2">AI Signal Pills</h3>
+      <p class="text-sm text-slate-400 mb-3">These labels appear on task cards when Gemini detects specific conditions in the comment thread:</p>
+      <div class="space-y-2 text-sm">
+        <div class="flex items-start gap-3">
+          <span class="px-2 py-0.5 bg-rose-500/15 text-rose-300 rounded text-xs font-medium shrink-0 mt-0.5">Blocker</span>
+          <span class="text-slate-300">Something is preventing progress — a dependency, missing asset, or unresolved question.</span>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="px-2 py-0.5 bg-amber-500/15 text-amber-300 rounded text-xs font-medium shrink-0 mt-0.5">Direct Mention</span>
+          <span class="text-slate-300">You (or a monitored team member) were named in a recent comment.</span>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="px-2 py-0.5 bg-amber-500/15 text-amber-300 rounded text-xs font-medium shrink-0 mt-0.5">Approval Needed</span>
+          <span class="text-slate-300">Someone is waiting for sign-off, review, or a decision from the production team.</span>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="px-2 py-0.5 bg-slate-500/15 text-slate-300 rounded text-xs font-medium shrink-0 mt-0.5">Ambiguous</span>
+          <span class="text-slate-300">Unclear who should act next — the thread may need a nudge or clarification.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ball With / Stage -->
+    <div>
+      <h3 class="text-sm font-semibold text-slate-300 mb-2">Ball With &amp; Stage</h3>
+      <p class="text-sm text-slate-400 mb-2">Gemini determines who currently "holds the ball" (whose turn it is to act) and the workflow stage:</p>
+      <div class="space-y-1.5 text-sm text-slate-300">
+        <div><span class="text-white font-medium">Ball with producer</span> — You or your team need to take the next action (+20 to score).</div>
+        <div><span class="text-white font-medium">Ball with client</span> — Waiting on the client. Score is reduced (-10 for pending_client stage).</div>
+        <div><span class="text-white font-medium">Stages:</span> <span class="text-cyan-400">pending_review</span> (+15), <span class="text-cyan-400">pending_client</span> (-10), <span class="text-cyan-400">blocked</span> (+5), <span class="text-cyan-400">in_progress</span> (no change).</div>
+      </div>
+    </div>
+
+    <!-- Star Boost -->
+    <div>
+      <h3 class="text-sm font-semibold text-slate-300 mb-2">Star Boost</h3>
+      <p class="text-sm text-slate-300">Starring a task adds <span class="text-amber-300 font-medium">+60 raw points</span> (~20 on the 0-100 scale) to its score — but only when a qualifying condition exists (blocker, mention, approval, ambiguous ownership, pending review, or staleness &gt;7 days). Starring a low-signal task won't inflate its score. The boost is part of the raw sum and interacts naturally with the joint multiplier.</p>
+    </div>
+
+    <!-- Unassigned Tasks -->
+    <div>
+      <h3 class="text-sm font-semibold text-slate-300 mb-2">Unassigned Tasks</h3>
+      <p class="text-sm text-slate-300">Tasks with no assignee in Basecamp are hidden from all views. The poller continues tracking them, so when someone assigns the task in Basecamp it will automatically appear on the next poll cycle.</p>
+    </div>
+
+    <!-- Staleness Badges -->
+    <div>
+      <h3 class="text-sm font-semibold text-slate-300 mb-2">Staleness Badges</h3>
+      <p class="text-sm text-slate-400 mb-3">Days since the last comment on a task. Badges appear at 4+ days:</p>
+      <div class="flex flex-wrap gap-3 text-sm">
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 bg-slate-600/50 text-slate-300 rounded text-xs font-medium">4-5d</span>
+          <span class="text-slate-400">Getting stale</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 bg-amber-500/15 text-amber-300 rounded text-xs font-medium">6-7d</span>
+          <span class="text-slate-400">Needs attention</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 bg-rose-500/15 text-rose-300 rounded text-xs font-medium">8-14d</span>
+          <span class="text-slate-400">Overdue</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 bg-rose-500/20 text-rose-300 rounded text-xs font-bold">15d+</span>
+          <span class="text-slate-400">Critical</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 4: Smart Filters -->
+  <section id="filters" class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5 space-y-4">
+    <h2 class="text-base font-semibold text-white">4. Smart Filters</h2>
+    <p class="text-sm text-slate-200">Filter pills appear on both the Account view and the Morning Briefing. Click to toggle; active filters glow.</p>
+
+    <div>
+      <h3 class="text-sm font-semibold text-slate-300 mb-2">Available Filters</h3>
+      <div class="space-y-2 text-sm">
+        <div class="flex items-start gap-3">
+          <span class="px-2.5 py-0.5 bg-blue-800/50 text-blue-300 rounded-full text-xs font-medium shrink-0 mt-0.5">Ball with Me</span>
+          <span class="text-slate-300">Tasks where Gemini determined the ball is with you or your core team. These are your action items.</span>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="px-2.5 py-0.5 bg-blue-800/50 text-blue-300 rounded-full text-xs font-medium shrink-0 mt-0.5">Blockers</span>
+          <span class="text-slate-300">Tasks with a blocker detected — something is preventing progress.</span>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="px-2.5 py-0.5 bg-blue-800/50 text-blue-300 rounded-full text-xs font-medium shrink-0 mt-0.5">Needs Approval</span>
+          <span class="text-slate-300">Tasks where someone is waiting for a decision or sign-off.</span>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="px-2.5 py-0.5 bg-blue-800/50 text-blue-300 rounded-full text-xs font-medium shrink-0 mt-0.5">Stale 7d+</span>
+          <span class="text-slate-300">Tasks with no comment activity in 7 or more days.</span>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="px-2.5 py-0.5 bg-blue-800/50 text-blue-300 rounded-full text-xs font-medium shrink-0 mt-0.5">Starred</span>
+          <span class="text-slate-300">Tasks you've manually starred for tracking.</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h3 class="text-sm font-semibold text-slate-300 mb-2">How Filters Work</h3>
+      <ul class="space-y-1.5 text-sm text-slate-300 list-disc list-inside">
+        <li><span class="text-white font-medium">AND logic</span> — each additional filter narrows the list. "Ball with Me" + "Blockers" = blocked tasks where you need to act.</li>
+        <li><span class="text-white font-medium">Combine with tier tabs</span> — on Account view, use tier tabs (1-4) plus filters. E.g., "Urgent" tab + "Ball with Me" = your highest-priority action items for that client.</li>
+        <li><span class="text-white font-medium">URL-shareable</span> — active filters appear in the query string (<code class="text-xs bg-slate-700 px-1.5 py-0.5 rounded text-slate-300">?filters=ball_with_me,blocker</code>), so you can bookmark or share filtered views.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Section 5: Upvote / Downvote Feedback -->
+  <section id="voting" class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5 space-y-4">
+    <h2 class="text-base font-semibold text-white">5. Upvote / Downvote Feedback</h2>
+    <p class="text-sm text-slate-200">Thumbs up/down buttons on every task card let you flag whether a surfaced task was useful to see. This is purely a data-collection mechanism — votes do <span class="text-white font-medium">not</span> affect scoring, visibility, or any other behavior.</p>
+
+    <div>
+      <h3 class="text-sm font-semibold text-slate-300 mb-2">How It Works</h3>
+      <ul class="space-y-1.5 text-sm text-slate-300 list-disc list-inside">
+        <li><span class="text-teal-400 font-medium">Upvote</span> — marks the task as "useful to see." Use when the scoring system surfaced something you actually needed to act on.</li>
+        <li><span class="text-rose-400 font-medium">Downvote</span> — marks the task as "not useful." Use when a task was surfaced at a high priority but didn't warrant your attention.</li>
+        <li><span class="text-white font-medium">Toggle</span> — clicking the active vote again clears it. Clicking the opposite vote switches directly.</li>
+        <li><span class="text-white font-medium">No scoring impact</span> — votes are stored for future analysis only. They don't change the task's score or tier.</li>
+      </ul>
+    </div>
+
+    <div>
+      <h3 class="text-sm font-semibold text-slate-300 mb-2">Where to Vote</h3>
+      <ul class="space-y-1.5 text-sm text-slate-300 list-disc list-inside">
+        <li>Quick-action icons on task cards (Account view + Briefing)</li>
+        <li>"Upvote" / "Downvote" buttons in the task detail panel</li>
+      </ul>
+    </div>
+
+    <div>
+      <h3 class="text-sm font-semibold text-slate-300 mb-2">Reviewing Votes</h3>
+      <p class="text-sm text-slate-300">Use the "Upvoted" and "Downvoted" filter pills on Account or Briefing views to review tasks you've voted on. After accumulating votes over a few weeks, the data can be analyzed to identify patterns and inform future scoring refinements.</p>
+    </div>
+  </section>
+</div>
+{% endblock %}

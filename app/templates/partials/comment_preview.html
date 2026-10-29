@@ -1,0 +1,28 @@
+{% set all_comments = comments or [] %}
+{% set show_comments = all_comments[-3:] if not show_all else all_comments %}
+{% if all_comments %}
+<div class="mb-4">
+  <h3 class="text-xs text-slate-400 mb-2">Comments{% if all_comments | length > 0 %} ({{ all_comments | length }}){% endif %}</h3>
+  <div class="space-y-2">
+    {% for comment in show_comments %}
+    <div class="bg-slate-900/40 rounded-lg p-3">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-xs font-medium text-slate-300">{{ comment.get("creator", {}).get("name", "Unknown") }}</span>
+        <span class="text-xs text-slate-400">{{ comment.get("created_at", "") | relative_time }}</span>
+      </div>
+      {% set content = comment.get("content", "") | strip_html %}
+      <p class="text-xs text-slate-300 leading-relaxed">{{ content[:200] }}{% if content | length > 200 %}...{% endif %}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% if all_comments | length > 3 and not show_all %}
+  <button
+    hx-get="/accounts/{{ task.account_id }}/tasks/{{ task.id }}/comments"
+    hx-target="#comment-preview"
+    hx-swap="innerHTML"
+    class="mt-2 text-xs text-blue-300 hover:text-blue-200 transition-colors">
+    Show all {{ all_comments | length }} comments
+  </button>
+  {% endif %}
+</div>
+{% endif %}

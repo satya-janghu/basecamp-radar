@@ -1,0 +1,7 @@
+<form method="post" action="/accounts/{{ account.id }}" class="flex items-center gap-2">
+  <input type="text" name="name" value="{{ account.name }}"
+    class="bg-slate-700 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
+    autofocus>
+  <button type="submit" class="px-3 py-1.5 text-xs bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors">Save</button>
+  <a href="/accounts/{{ account.id }}" class="px-3 py-1.5 text-xs text-slate-300 hover:text-white transition-colors">Cancel</a>
+</form>

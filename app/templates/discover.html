@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Discover Projects — Basecamp Radar{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <a href="/" class="text-xs text-blue-300 hover:text-blue-200 inline-flex items-center gap-1 transition-colors">&larr; Dashboard</a>
+      <h1 class="text-xl font-bold text-white mt-1">Discover Basecamp Projects</h1>
+      <p class="text-sm text-slate-300 mt-1">Review detected projects and assign them to accounts.</p>
+    </div>
+  </div>
+
+  <form method="post" action="/discover/confirm" id="discover-form">
+    {% set untracked = suggestions | selectattr("already_tracked", "false") | list %}
+    {% set tracked = suggestions | selectattr("already_tracked", "true") | list %}
+
+    <!-- Untracked Projects -->
+    {% if untracked %}
+    <div class="space-y-3 mb-8">
+      <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wide">New Projects ({{ untracked | length }})</h2>
+      {% for s in untracked %}
+      <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4" id="project-{{ s.basecamp_project_id }}">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm font-medium text-white truncate">{{ s.basecamp_project_name }}</span>
+              {% if s.parsed %}
+              <span class="px-2 py-0.5 text-xs rounded-full {% if s.parsed.project_type == 'Joint' %}bg-blue-500/20 text-blue-300{% else %}bg-slate-600/50 text-slate-400{% endif %}">
+                {{ s.parsed.project_type }}
+              </span>
+              <span class="px-2 py-0.5 text-xs rounded-full bg-slate-600/50 text-slate-400">
+                {{ s.parsed.service_type }}
+              </span>
+              {% endif %}
+            </div>
+            {% if s.matched_account_name %}
+            <p class="text-xs text-slate-400 mt-1">
+              Matched: <span class="text-teal-400">{{ s.matched_account_name }}</span>
+              <span class="text-slate-400">({{ "%.0f" | format(s.match_confidence) }}%)</span>
+            </p>
+            {% elif s.parsed %}
+            <p class="text-xs text-slate-400 mt-1">No matching account found for "{{ s.parsed.client_name }}"</p>
+            {% else %}
+            <p class="text-xs text-slate-400 mt-1">Could not parse project name</p>
+            {% endif %}
+          </div>
+
+          <!-- Action buttons -->
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            {% if s.matched_account_name %}
+            <button type="button" onclick="setAction('{{ s.basecamp_project_id }}', 'accept')"
+              class="action-btn px-2.5 py-1 text-xs rounded-lg border transition-colors"
+              data-project="{{ s.basecamp_project_id }}" data-action="accept">Accept</button>
+            {% endif %}
+            <button type="button" onclick="setAction('{{ s.basecamp_project_id }}', 'create')"
+              class="action-btn px-2.5 py-1 text-xs rounded-lg border transition-colors"
+              data-project="{{ s.basecamp_project_id }}" data-action="create">New Account</button>
+            <button type="button" onclick="setAction('{{ s.basecamp_project_id }}', 'assign')"
+              class="action-btn px-2.5 py-1 text-xs rounded-lg border transition-colors"
+              data-project="{{ s.basecamp_project_id }}" data-action="assign">Assign</button>
+            <button type="button" onclick="setAction('{{ s.basecamp_project_id }}', 'skip')"
+              class="action-btn px-2.5 py-1 text-xs rounded-lg border border-slate-600 text-slate-400 bg-slate-700/50"
+              data-project="{{ s.basecamp_project_id }}" data-action="skip">Skip</button>
+          </div>
+        </div>
+
+        <!-- Expandable options (hidden by default) -->
+        <div id="opts-{{ s.basecamp_project_id }}" class="mt-3 hidden">
+          <!-- Create new account name -->
+          <div id="create-{{ s.basecamp_project_id }}" class="hidden">
+            <input type="text" name="new_name_{{ s.basecamp_project_id }}"
+              value="{{ s.parsed.client_name if s.parsed else '' }}"
+              placeholder="Account name"
+              class="bg-slate-700 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent w-64">
+          </div>
+          <!-- Assign to existing account -->
+          <div id="assign-{{ s.basecamp_project_id }}" class="hidden">
+            <select name="account_{{ s.basecamp_project_id }}"
+              class="bg-slate-700 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent w-64">
+              <option value="">Select account...</option>
+              {% for acct in accounts %}
+              <option value="{{ acct.id }}" {% if s.matched_account_id == acct.id|string %}selected{% endif %}>{{ acct.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- Hidden form fields -->
+        <input type="hidden" name="action_{{ s.basecamp_project_id }}" id="action-val-{{ s.basecamp_project_id }}" value="skip">
+        <input type="hidden" name="name_{{ s.basecamp_project_id }}" value="{{ s.basecamp_project_name }}">
+        <input type="hidden" name="type_{{ s.basecamp_project_id }}" value="{{ s.parsed.project_type if s.parsed else '' }}">
+        <input type="hidden" name="service_{{ s.basecamp_project_id }}" value="{{ s.parsed.service_type if s.parsed else '' }}">
+        {% if s.matched_account_id %}
+        <input type="hidden" name="account_{{ s.basecamp_project_id }}" id="account-hidden-{{ s.basecamp_project_id }}" value="{{ s.matched_account_id }}">
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Already Tracked -->
+    {% if tracked %}
+    <div class="space-y-3 mb-8">
+      <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wide">Already Tracked ({{ tracked | length }})</h2>
+      {% for s in tracked %}
+      <div class="bg-slate-800/30 border border-slate-700/30 rounded-xl p-4 opacity-60">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-slate-300">{{ s.basecamp_project_name }}</span>
+            {% if s.parsed %}
+            <span class="px-2 py-0.5 text-xs rounded-full bg-slate-700/50 text-slate-400">{{ s.parsed.project_type }}</span>
+            {% endif %}
+          </div>
+          <span class="text-xs text-slate-400">Tracked</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if not suggestions %}
+    <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-8 text-center">
+      <p class="text-slate-300 text-sm">No projects found in Basecamp.</p>
+    </div>
+    {% endif %}
+
+    <!-- Footer -->
+    {% if untracked %}
+    <div class="flex items-center justify-between pt-4 border-t border-slate-700/50">
+      <span class="text-sm text-slate-300" id="selection-counter">0 projects selected</span>
+      <div class="flex items-center gap-3">
+        <a href="/" class="px-4 py-2 text-sm text-slate-300 hover:text-white transition-colors">Cancel</a>
+        <button type="submit" class="px-4 py-2 text-sm bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-1.5">
+          Confirm Selection
+          <span class="htmx-indicator spinner"></span>
+        </button>
+      </div>
+    </div>
+    {% endif %}
+  </form>
+</div>
+
+<script>
+function setAction(projectId, action) {
+  // Update hidden field
+  document.getElementById('action-val-' + projectId).value = action;
+
+  // Style buttons
+  const btns = document.querySelectorAll('[data-project="' + projectId + '"]');
+  btns.forEach(btn => {
+    const isActive = btn.dataset.action === action;
+    btn.className = 'action-btn px-2.5 py-1 text-xs rounded-lg border transition-colors ' +
+      (isActive ? 'border-blue-500 text-blue-300 bg-blue-500/20' : 'border-slate-600 text-slate-400 bg-transparent hover:border-slate-500');
+    if (btn.dataset.action === 'skip' && isActive) {
+      btn.className = 'action-btn px-2.5 py-1 text-xs rounded-lg border transition-colors border-slate-600 text-slate-400 bg-slate-700/50';
+    }
+  });
+
+  // Show/hide option panels
+  const opts = document.getElementById('opts-' + projectId);
+  const createPanel = document.getElementById('create-' + projectId);
+  const assignPanel = document.getElementById('assign-' + projectId);
+
+  if (action === 'create') {
+    opts.classList.remove('hidden');
+    createPanel.classList.remove('hidden');
+    assignPanel.classList.add('hidden');
+  } else if (action === 'assign') {
+    opts.classList.remove('hidden');
+    createPanel.classList.add('hidden');
+    assignPanel.classList.remove('hidden');
+  } else {
+    opts.classList.add('hidden');
+    createPanel.classList.add('hidden');
+    assignPanel.classList.add('hidden');
+  }
+
+  updateCounter();
+}
+
+function updateCounter() {
+  const actions = document.querySelectorAll('input[id^="action-val-"]');
+  let count = 0;
+  actions.forEach(input => { if (input.value !== 'skip') count++; });
+  const el = document.getElementById('selection-counter');
+  if (el) el.textContent = count + ' project' + (count !== 1 ? 's' : '') + ' selected';
+}
+</script>
+{% endblock %}

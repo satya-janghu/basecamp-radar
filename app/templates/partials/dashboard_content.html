@@ -1,0 +1,114 @@
+<!-- Summary Stats -->
+<div class="grid grid-cols-4 gap-4">
+  <div class="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4 text-center">
+    <div class="text-3xl font-bold text-white mb-1">{{ totals.total }}</div>
+    <div class="text-xs text-slate-300 uppercase tracking-wide">Tracked Tasks</div>
+    {% if totals.pending > 0 %}
+    <div class="text-xs text-slate-400 mt-0.5">({{ totals.pending }} pending)</div>
+    {% endif %}
+  </div>
+  <div class="bg-rose-500/10 rounded-xl border border-rose-500/20 p-4 text-center">
+    <div class="text-3xl font-bold text-rose-400 mb-1">{{ totals.critical }}</div>
+    <div class="text-xs text-rose-300 uppercase tracking-wide">Critical</div>
+  </div>
+  <div class="bg-orange-500/10 rounded-xl border border-orange-500/15 p-4 text-center">
+    <div class="text-3xl font-bold text-orange-400 mb-1">{{ totals.high }}</div>
+    <div class="text-xs text-orange-300 uppercase tracking-wide">High</div>
+  </div>
+  <div class="bg-amber-500/10 rounded-xl border border-amber-500/15 p-4 text-center">
+    <div class="text-3xl font-bold text-amber-400 mb-1">{{ totals.medium }}</div>
+    <div class="text-xs text-amber-300 uppercase tracking-wide">Medium</div>
+  </div>
+</div>
+
+<!-- Accounts -->
+<div>
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-semibold text-white">Accounts
+      {% if last_poll %}
+      <span class="text-xs text-slate-400 font-normal ml-2">Last poll: {{ last_poll | pst_time('short') }}</span>
+      {% endif %}
+    </h2>
+    <div class="flex items-center gap-2">
+      {% if basecamp_connected %}
+      <a href="/discover" class="px-3 py-1.5 text-xs bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors">
+        Discover Projects
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if account_data %}
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for item in account_data %}
+    {% set acct = item.account %}
+    <a href="/accounts/{{ acct.id }}" class="block bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 hover:border-slate-600/70 transition-colors group">
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex items-center gap-1.5 min-w-0">
+          {% if item.new_activity_count > 0 %}
+          <span class="flex-shrink-0 w-2 h-2 bg-blue-400 rounded-full animate-pulse" title="{{ item.new_activity_count }} task{{ 's' if item.new_activity_count != 1 else '' }} with new activity"></span>
+          {% endif %}
+          <h3 class="text-sm font-semibold text-white group-hover:text-blue-300 transition-colors truncate">{{ acct.name }}</h3>
+        </div>
+        {% if item.critical > 0 %}
+        <span class="flex-shrink-0 ml-2 px-2 py-0.5 text-xs font-bold bg-rose-500/20 text-rose-300 rounded-full">{{ item.critical }}</span>
+        {% endif %}
+      </div>
+
+      <!-- Priority bar (5-tier) -->
+      {% if item.total > 0 %}
+      <div class="flex h-2 rounded-full overflow-hidden bg-slate-700/50 mb-3">
+        {% if item.critical > 0 %}
+        <div class="bg-rose-500" style="width: {{ (item.critical / item.total * 100) | round }}%" title="Critical: {{ item.critical }}"></div>
+        {% endif %}
+        {% if item.high > 0 %}
+        <div class="bg-orange-500" style="width: {{ (item.high / item.total * 100) | round }}%" title="High: {{ item.high }}"></div>
+        {% endif %}
+        {% if item.medium > 0 %}
+        <div class="bg-amber-500" style="width: {{ (item.medium / item.total * 100) | round }}%" title="Medium: {{ item.medium }}"></div>
+        {% endif %}
+        {% if item.low > 0 %}
+        <div class="bg-teal-500" style="width: {{ (item.low / item.total * 100) | round }}%" title="Low: {{ item.low }}"></div>
+        {% endif %}
+        {% if item.minimal > 0 %}
+        <div class="bg-slate-500" style="width: {{ (item.minimal / item.total * 100) | round }}%" title="Minimal: {{ item.minimal }}"></div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Project badges -->
+      {% if acct.projects %}
+      <div class="flex flex-wrap gap-1 mb-2">
+        {% for proj in acct.projects[:4] %}
+        <span class="px-1.5 py-0.5 text-xs rounded bg-slate-700/50 text-slate-300 truncate max-w-[120px]">
+          {% if proj.type == "Joint" %}J{% else %}I{% endif %} / {{ proj.service_type or "—" }}
+        </span>
+        {% endfor %}
+        {% if acct.projects | length > 4 %}
+        <span class="px-1.5 py-0.5 text-xs rounded bg-slate-700/50 text-slate-400">+{{ acct.projects | length - 4 }}</span>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <div class="flex items-center justify-between text-xs text-slate-400">
+        <span>{{ item.total }} task{{ "s" if item.total != 1 else "" }}</span>
+        {% if item.last_activity %}
+        <span title="{{ item.last_activity }}">{{ item.last_activity | relative_time }}</span>
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-8 text-center">
+    <p class="text-slate-300 text-sm">No accounts configured yet.</p>
+    <p class="text-slate-400 text-xs mt-2">
+      {% if basecamp_connected %}
+      <a href="/discover" class="text-blue-300 hover:text-blue-200">Discover projects</a> to get started.
+      {% else %}
+      Connect Basecamp above, then discover projects.
+      {% endif %}
+    </p>
+  </div>
+  {% endif %}
+</div>

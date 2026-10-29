@@ -1,0 +1,311 @@
+{% from "macros/tier.html" import tier_bg, tier_text, tier_badge_lg, tier_label, analysis_badge %}
+{% from "macros/icons.html" import star_filled, star_empty, thumb_up, thumb_up_filled, thumb_down, thumb_down_filled %}
+<div class="bg-slate-800/50 border border-slate-700/50 rounded-xl sticky top-20 relative max-h-[calc(100vh-6rem)] flex flex-col overflow-hidden">
+  <!-- Scrollable content -->
+  <div class="flex-1 overflow-y-auto p-5 min-h-0">
+  <!-- Mobile close button -->
+  <button type="button" onclick="if(window.closeDrawer)closeDrawer()" class="lg:hidden absolute top-3 right-3 text-slate-300 hover:text-white p-1 z-10" aria-label="Close detail panel">
+    <i data-lucide="x" class="w-5 h-5"></i>
+  </button>
+
+  <!-- Header -->
+  <div class="flex items-start justify-between mb-4">
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="px-2 py-0.5 text-xs rounded-full {{ tier_bg(task.priority_tier) }} {{ tier_text(task.priority_tier) }}">
+          {{ tier_label(task.priority_tier) }}
+        </span>
+        <span class="sr-only">Priority: {{ tier_label(task.priority_tier) }}</span>
+        {% if task.analysis_status and task.analysis_status != 'complete' %}
+        {{ analysis_badge(task.analysis_status) }}
+        {% endif %}
+        {% if task.dismissed_at %}
+        <span class="px-2 py-0.5 text-xs rounded-full bg-slate-600/50 text-slate-400">Dismissed</span>
+        {% elif task.snoozed_until %}
+        <span class="px-2 py-0.5 text-xs rounded-full bg-amber-500/15 text-amber-300">Snoozed until {{ task.snoozed_until | pst_time('short') }}</span>
+        {% endif %}
+      </div>
+      <h2 class="text-base font-semibold text-white">{{ task.title or "Untitled" }}</h2>
+    </div>
+    {{ tier_badge_lg(task.priority_score, task.priority_tier, task.previous_score) }}
+  </div>
+
+  <!-- Metadata grid -->
+  <div class="grid grid-cols-2 gap-3 mb-4 text-xs">
+    {% if task.project_type %}
+    <div>
+      <span class="text-slate-400">Project</span>
+      <div class="text-slate-200 mt-0.5">{{ task.project_type }}</div>
+    </div>
+    {% endif %}
+    {% if task.ai_ball_with %}
+    <div>
+      <span class="text-slate-400">Ball with</span>
+      <div class="text-slate-200 mt-0.5">{{ task.ai_ball_with }}</div>
+    </div>
+    {% endif %}
+    {% if task.ai_current_stage %}
+    <div>
+      <span class="text-slate-400">Stage</span>
+      <div class="text-slate-200 mt-0.5">{{ task.ai_current_stage }}</div>
+    </div>
+    {% endif %}
+    {% if task.assignee %}
+    <div>
+      <span class="text-slate-400">Assignee{{ 's' if task.assignee_names and task.assignee_names | length > 1 else '' }}</span>
+      <div class="text-slate-200 mt-0.5">
+        {%- if task.assignee_names and task.assignee_names | length > 1 -%}
+          {{ task.assignee_names | join(', ') }}
+        {%- else -%}
+          {{ task.assignee }}
+        {%- endif -%}
+      </div>
+    </div>
+    {% endif %}
+    {% if task.completion_subscribers %}
+    <div>
+      <span class="text-slate-400">Notified on completion</span>
+      <div class="text-slate-200 mt-0.5">{{ task.completion_subscribers | join(', ') }}</div>
+    </div>
+    {% endif %}
+    {% if task.due_date %}
+    <div>
+      <span class="text-slate-400">Due date</span>
+      <div class="text-slate-200 mt-0.5">{{ task.due_date }}</div>
+    </div>
+    {% endif %}
+    {% if task.comment_count is not none %}
+    <div>
+      <span class="text-slate-400">Comments</span>
+      <div class="text-slate-200 mt-0.5">{{ task.comment_count }}</div>
+    </div>
+    {% endif %}
+    {% if task.last_known_activity_at %}
+    <div>
+      <span class="text-slate-400">Last activity</span>
+      <div class="text-slate-200 mt-0.5">{{ task.last_known_activity_at | pst_time('short') if task.last_known_activity_at else '—' }}</div>
+    </div>
+    {% endif %}
+    {% if task.previous_score is not none %}
+    <div>
+      <span class="text-slate-400">Previous score</span>
+      <div class="text-slate-200 mt-0.5">{{ task.previous_score }}
+        <span class="text-slate-400">({{ task.previous_tier or "—" }})</span>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Recommendation -->
+  {% if task.ai_recommendation %}
+  <div class="mb-4">
+    <h3 class="text-xs text-slate-400 mb-1">Recommendation</h3>
+    <p class="text-sm text-slate-300 bg-slate-700/30 rounded-lg p-3">{{ task.ai_recommendation }}</p>
+  </div>
+  {% endif %}
+
+  <!-- Comment preview -->
+  <div id="comment-preview">
+    {% set comments = task.raw_comments or [] %}
+    {% include "partials/comment_preview.html" %}
+  </div>
+
+  <!-- Score breakdown bar -->
+  {% if score_segments is defined and score_segments %}
+  <div class="mb-4">
+    <h3 class="text-xs text-slate-400 mb-2">Score Breakdown</h3>
+    <!-- Stacked bar -->
+    {% set bar_max = max_score or 300 %}
+    <div class="h-2 rounded-full overflow-hidden flex bg-slate-700/50">
+      {% for seg in score_segments %}
+      {% if not seg.get("negative") %}
+      <div class="{{ seg.bar_color }} opacity-80" style="width: {{ (seg.points / bar_max * 100) | round(1) }}%" title="{{ seg.label }}: +{{ seg.points }}"></div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    <!-- Legend -->
+    <div class="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+      {% for seg in score_segments %}
+      <div class="flex items-center gap-1 text-xs">
+        <span class="w-2 h-2 rounded-full {{ 'bg-rose-400' if seg.get('negative') else seg.dot_color }}"></span>
+        <span class="text-slate-300">{{ seg.label }}</span>
+        <span class="{{ 'text-rose-400' if seg.get('negative') else 'text-slate-400' }}">{{ seg.points if seg.get('negative') else '+' ~ seg.points }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% if task.score_breakdown and task.score_breakdown.raw_total is defined %}
+    <div class="flex items-center justify-between text-xs mt-2 pt-1 border-t border-slate-700/50">
+      <span class="text-slate-300 font-medium">Raw{% if task.score_breakdown.get("joint_multiplier", 1.0) != 1.0 %} &times; {{ task.score_breakdown.joint_multiplier }}{% endif %} / Normalized</span>
+      <span class="text-slate-300 font-medium">{{ task.score_breakdown.raw_total }}{% if task.score_breakdown.get("joint_multiplier", 1.0) != 1.0 %} &rarr; {{ task.score_breakdown.get("effective_total", "—") }}{% endif %} / {{ task.score_breakdown.get("normalized_score", "—") }}</span>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- AI Signals -->
+  {% if task.ai_signals %}
+  <div class="mb-4">
+    <h3 class="text-xs text-slate-400 mb-2">AI Signals</h3>
+    <div class="flex flex-wrap gap-1.5">
+      {% if task.ai_signals.get("is_blocked") %}
+      <span class="px-2 py-0.5 text-xs bg-rose-500/20 text-rose-300 rounded-full">Blocker</span>
+      {% endif %}
+      {% if task.ai_signals.get("has_direct_mention") %}
+      <span class="px-2 py-0.5 text-xs bg-amber-500/20 text-amber-300 rounded-full">Direct Mention</span>
+      {% endif %}
+      {% if task.ai_signals.get("needs_approval") %}
+      <span class="px-2 py-0.5 text-xs bg-blue-500/20 text-blue-300 rounded-full">Approval Needed</span>
+      {% endif %}
+      {% if task.ai_signals.get("ownership_ambiguous") %}
+      <span class="px-2 py-0.5 text-xs bg-slate-600/50 text-slate-300 rounded-full">Ambiguous Ownership</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- AI Reasoning (collapsible) -->
+  {% set has_reasoning = (task.ai_signals and (task.ai_signals.get("is_blocked") or task.ai_signals.get("urgency_factors") or task.score_breakdown)) or task.analysis_status %}
+  {% if has_reasoning %}
+  <details class="mb-4">
+    <summary class="text-xs text-slate-400 cursor-pointer hover:text-slate-300 select-none">AI Reasoning</summary>
+    <div class="mt-2 space-y-3">
+      {% if task.ai_signals and task.ai_signals.get("is_blocked") and task.ai_signals.get("blocked_reason") %}
+      <div class="bg-rose-500/10 border border-rose-500/20 rounded-lg p-3">
+        <div class="text-xs font-medium text-rose-300 mb-1">Blocked</div>
+        <p class="text-xs text-rose-200/80">{{ task.ai_signals.blocked_reason }}</p>
+      </div>
+      {% endif %}
+
+      {% if task.ai_signals and task.ai_signals.get("urgency_factors") %}
+      <div>
+        <div class="text-xs font-medium text-slate-300 mb-1">Urgency Factors</div>
+        <ul class="space-y-0.5">
+          {% for factor in task.ai_signals.urgency_factors %}
+          <li class="text-xs text-slate-400 flex items-start gap-1.5">
+            <span class="text-slate-500 mt-0.5">&bull;</span>
+            <span>{{ factor }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      {% if task.score_breakdown and task.score_breakdown.get("stage", {}).get("points", 0) < 0 %}
+      <div class="bg-teal-500/10 border border-teal-500/20 rounded-lg px-3 py-2">
+        <p class="text-xs text-teal-300">Stage: {{ task.score_breakdown.stage.value }} ({{ task.score_breakdown.stage.points }} pts) — score reduced</p>
+      </div>
+      {% endif %}
+
+      <div class="flex items-center gap-3 text-xs text-slate-500 pt-1 border-t border-slate-700/30">
+        {% if task.last_analyzed_at %}
+        <span>Analyzed {{ task.last_analyzed_at | pst_time('short') }}</span>
+        {% endif %}
+        {% if task.analysis_status %}
+        <span>Status: {{ task.analysis_status }}</span>
+        {% endif %}
+        {% if task.analysis_error_count and task.analysis_error_count > 0 %}
+        <span class="text-amber-400">{{ task.analysis_error_count }} error{{ "s" if task.analysis_error_count != 1 else "" }}</span>
+        {% endif %}
+      </div>
+    </div>
+  </details>
+  {% endif %}
+
+  </div>
+
+  <!-- Pinned actions -->
+  <div class="flex-shrink-0 px-5 pb-5">
+  <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-700/50">
+    {% if task.basecamp_url %}
+    <a href="{{ task.basecamp_url }}" target="_blank" rel="noopener"
+      class="px-3 py-1.5 text-xs bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors inline-block">
+      Open in Basecamp
+    </a>
+    {% endif %}
+    <button
+      hx-post="/accounts/{{ task.account_id }}/tasks/{{ task.id }}/star?context=detail"
+      hx-target="#task-detail"
+      hx-swap="innerHTML"
+      class="px-3 py-1.5 text-xs rounded-lg transition-colors inline-flex items-center gap-1
+        {{ 'bg-amber-500/15 text-amber-300 border border-amber-500/30' if task.is_starred else 'text-slate-300 hover:text-amber-300 border border-slate-700 hover:border-slate-600' }}"
+      aria-label="{{ 'Unstar' if task.is_starred else 'Star' }} task">
+      {% if task.is_starred %}{{ star_filled("w-3.5 h-3.5") }}{% else %}{{ star_empty("w-3.5 h-3.5") }}{% endif %}
+      {{ 'Starred' if task.is_starred else 'Star' }}
+    </button>
+    <button
+      hx-post="/accounts/{{ task.account_id }}/tasks/{{ task.id }}/vote?context=detail"
+      hx-target="#task-detail"
+      hx-swap="innerHTML"
+      hx-vals='{"value": "1", "source": "detail"}'
+      class="px-3 py-1.5 text-xs rounded-lg transition-colors inline-flex items-center gap-1
+        {{ 'bg-teal-500/15 text-teal-400 border border-teal-500/30' if task.vote == 1 else 'text-slate-300 hover:text-teal-400 border border-slate-700 hover:border-slate-600' }}"
+      aria-label="{{ 'Remove upvote' if task.vote == 1 else 'Upvote' }} task">
+      {% if task.vote == 1 %}{{ thumb_up_filled("w-3.5 h-3.5") }}{% else %}{{ thumb_up("w-3.5 h-3.5") }}{% endif %}
+      {{ 'Upvoted' if task.vote == 1 else 'Upvote' }}
+    </button>
+    <button
+      hx-post="/accounts/{{ task.account_id }}/tasks/{{ task.id }}/vote?context=detail"
+      hx-target="#task-detail"
+      hx-swap="innerHTML"
+      hx-vals='{"value": "-1", "source": "detail"}'
+      class="px-3 py-1.5 text-xs rounded-lg transition-colors inline-flex items-center gap-1
+        {{ 'bg-rose-500/15 text-rose-400 border border-rose-500/30' if task.vote == -1 else 'text-slate-300 hover:text-rose-400 border border-slate-700 hover:border-slate-600' }}"
+      aria-label="{{ 'Remove downvote' if task.vote == -1 else 'Downvote' }} task">
+      {% if task.vote == -1 %}{{ thumb_down_filled("w-3.5 h-3.5") }}{% else %}{{ thumb_down("w-3.5 h-3.5") }}{% endif %}
+      {{ 'Downvoted' if task.vote == -1 else 'Downvote' }}
+    </button>
+    <button
+      aria-label="Refresh task"
+      hx-post="/accounts/{{ task.account_id }}/tasks/{{ task.id }}/refresh"
+      hx-target="#task-detail"
+      hx-swap="innerHTML"
+      class="px-3 py-1.5 text-xs text-slate-300 hover:text-blue-300 border border-slate-700 hover:border-slate-600 rounded-lg transition-colors inline-flex items-center gap-1">
+      Refresh
+      <span class="htmx-indicator spinner"></span>
+    </button>
+    {% if task.dismissed_at or task.snoozed_until %}
+    <button
+      hx-post="/accounts/{{ task.account_id }}/tasks/{{ task.id }}/restore"
+      hx-target="#task-card-{{ task.id }}"
+      hx-swap="outerHTML"
+      class="px-3 py-1.5 text-xs text-teal-400 border border-teal-500/30 hover:bg-teal-500/10 rounded-lg transition-colors">
+      Restore
+    </button>
+    {% else %}
+    <button
+      hx-post="/accounts/{{ task.account_id }}/tasks/{{ task.id }}/dismiss"
+      hx-swap="none"
+      hx-confirm="Dismiss this task? You can restore it later via the Dismissed filter."
+      class="px-3 py-1.5 text-xs text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-500/30 rounded-lg transition-colors">
+      Dismiss
+    </button>
+    <button type="button" onclick="window.toggleSnoozeForm && window.toggleSnoozeForm('{{ task.id }}')"
+      class="px-3 py-1.5 text-xs text-slate-300 hover:text-amber-300 border border-slate-700 hover:border-amber-500/30 rounded-lg transition-colors">
+      Snooze
+    </button>
+    {% endif %}
+  </div>
+  <!-- Snooze form (hidden by default) -->
+  {% if not task.dismissed_at and not task.snoozed_until %}
+  <div id="snooze-form-{{ task.id }}" class="hidden mt-3 p-3 bg-slate-700/30 rounded-lg border border-slate-700/50">
+    <div class="flex flex-wrap gap-1.5 mb-2">
+      <button type="button" onclick="window.setSnoozePreset && window.setSnoozePreset(this, 'tomorrow')"
+        class="px-2 py-1 text-xs text-slate-300 bg-slate-700/50 rounded hover:bg-slate-600/50 transition-colors">Tomorrow 9am</button>
+      <button type="button" onclick="window.setSnoozePreset && window.setSnoozePreset(this, 'monday')"
+        class="px-2 py-1 text-xs text-slate-300 bg-slate-700/50 rounded hover:bg-slate-600/50 transition-colors">Next Monday 9am</button>
+      <button type="button" onclick="window.setSnoozePreset && window.setSnoozePreset(this, 'nextweek')"
+        class="px-2 py-1 text-xs text-slate-300 bg-slate-700/50 rounded hover:bg-slate-600/50 transition-colors">In 1 week</button>
+    </div>
+    <form hx-post="/accounts/{{ task.account_id }}/tasks/{{ task.id }}/snooze"
+      hx-swap="none"
+      class="flex items-center gap-2">
+      <input type="datetime-local" name="until"
+        class="snooze-input flex-1 bg-slate-700 border border-slate-600 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+      <button type="submit" class="px-3 py-1.5 text-xs bg-amber-600 text-white rounded-lg hover:bg-amber-500 transition-colors">Snooze</button>
+      <button type="button" onclick="window.toggleSnoozeForm && window.toggleSnoozeForm('{{ task.id }}')"
+        class="px-2 py-1.5 text-xs text-slate-400 hover:text-white transition-colors">Cancel</button>
+    </form>
+  </div>
+  {% endif %}
+  </div>
+</div>

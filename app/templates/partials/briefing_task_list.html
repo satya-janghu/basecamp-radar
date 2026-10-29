@@ -1,0 +1,16 @@
+{% if tasks %}
+<div class="text-xs text-slate-500 mb-2">{{ task_count }} task{{ "s" if task_count != 1 else "" }}</div>
+{% for task in tasks %}
+{% include "partials/briefing_task_card.html" %}
+{% endfor %}
+{% else %}
+<div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-8 text-center">
+  {% if active_filters %}
+  <p class="text-slate-300 text-sm">No tasks match the current filters.</p>
+  <p class="text-slate-400 text-xs mt-2">Try adjusting your filter criteria.</p>
+  {% else %}
+  <p class="text-slate-300 text-sm">No urgent tasks right now — all clear!</p>
+  <p class="text-slate-400 text-xs mt-2">Tasks will appear here when they reach Critical or High priority.</p>
+  {% endif %}
+</div>
+{% endif %}

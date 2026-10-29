@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Basecamp Radar{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Basecamp Connection Warning (only when disconnected) -->
+  {% if not basecamp_connected %}
+  <div class="flex items-center justify-between bg-amber-500/10 border border-amber-500/20 rounded-xl px-5 py-3">
+    <div class="flex items-center gap-2">
+      <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+      <span class="text-sm text-amber-400">Basecamp not connected</span>
+    </div>
+    <a href="/auth/basecamp" class="text-xs font-medium text-amber-400 hover:text-amber-300 transition-colors">Connect Basecamp &rarr;</a>
+  </div>
+  {% endif %}
+
+  <!-- Poll status bar (hidden by default) -->
+  <div id="poll-status-bar" class="hidden flex items-center gap-3 bg-blue-500/10 border border-blue-500/20 rounded-xl px-5 py-3">
+    <span class="inline-block w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse"></span>
+    <span id="poll-status-text" class="text-sm text-blue-300">Refreshing...</span>
+  </div>
+
+  <!-- Dashboard content (auto-refreshable via HTMX) -->
+  <div id="dashboard-content" class="space-y-6">
+    {% include "partials/dashboard_content.html" %}
+  </div>
+</div>
+
+<!-- Poll trigger + auto-refresh script -->
+<script>
+(function() {
+  var polling = false;
+  var pollTimer = null;
+  var pollRetries = 0;
+  var MAX_POLL_RETRIES = 60;
+  var statusBar = document.getElementById('poll-status-bar');
+  var statusText = document.getElementById('poll-status-text');
+
+  // Listen for poll trigger from keyboard shortcut or command palette
+  document.body.addEventListener('pollTriggered', function() {
+    startPolling();
+  });
+
+  function startPolling() {
+    if (polling) return;
+    polling = true;
+    pollRetries = 0;
+    statusBar.classList.remove('hidden');
+    statusText.textContent = 'Refreshing...';
+    pollTimer = setInterval(checkPollStatus, 5000);
+    // Check immediately
+    checkPollStatus();
+  }
+
+  function checkPollStatus() {
+    pollRetries++;
+    if (pollRetries > MAX_POLL_RETRIES) {
+      stopPolling();
+      if (window.showErrorToast) showErrorToast('Poll status check timed out after 5 minutes');
+      return;
+    }
+    fetch('/api/radar/status')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var pending = data.tasks && data.tasks.pending_analysis;
+        var active = data.tasks && data.tasks.active;
+        var isRunning = data.poll_running;
+
+        // Update status text with progress
+        if (isRunning && pending > 0) {
+          var analyzed = active - pending;
+          statusText.textContent = 'Analyzing ' + analyzed + '/' + active + ' tasks...';
+        } else if (isRunning) {
+          statusText.textContent = 'Refreshing...';
+        }
+
+        // Only complete when poll is done AND no pending tasks
+        if (!isRunning && pending === 0) {
+          stopPolling();
+          refreshDashboard();
+        }
+      })
+      .catch(function() {
+        // Ignore fetch errors, retry counter handles runaway
+      });
+  }
+
+  function stopPolling() {
+    polling = false;
+    statusBar.classList.add('hidden');
+    if (pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+  }
+
+  function refreshDashboard() {
+    htmx.ajax('GET', '/partials/dashboard-stats', {
+      target: '#dashboard-content',
+      swap: 'innerHTML'
+    });
+  }
+})();
+</script>
+{% endblock %}

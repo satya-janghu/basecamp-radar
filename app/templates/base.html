@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Basecamp Radar{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .htmx-indicator { display: none; }
+    .htmx-request .htmx-indicator,
+    .htmx-request.htmx-indicator { display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100">
+  <!-- Header -->
+  <header class="bg-slate-800/80 border-b border-slate-700/50 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <a href="/" class="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+          <div class="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-xs font-bold text-white">BR</div>
+          <span class="text-sm font-semibold text-white hidden sm:inline">Basecamp Radar</span>
+        </a>
+        <nav class="flex items-center gap-1">
+          <a href="/briefing" class="px-2.5 py-1 text-xs rounded-lg transition-colors text-slate-300 hover:text-white hover:bg-slate-700/50">Briefing</a>
+          <a href="/" class="px-2.5 py-1 text-xs rounded-lg transition-colors text-slate-300 hover:text-white hover:bg-slate-700/50">Dashboard</a>
+        </nav>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="/settings" aria-label="Settings" class="px-3 py-1.5 text-xs text-slate-300 hover:text-white border border-slate-700 hover:border-slate-600 rounded-lg transition-colors inline-flex items-center gap-1">
+          <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+          Settings
+        </a>
+        <form action="/logout" method="post">
+          <button type="submit" aria-label="Logout" class="px-3 py-1.5 text-xs text-slate-300 hover:text-white border border-slate-700 hover:border-slate-600 rounded-lg transition-colors">
+            Logout
+          </button>
+        </form>
+      </div>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main class="max-w-7xl mx-auto px-6 py-6">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Command Palette -->
+  <div id="cmd-palette-overlay" class="hidden fixed inset-0 bg-black/60 z-50" onclick="closePalette()"></div>
+  <div id="cmd-palette" class="hidden fixed top-[20%] left-1/2 -translate-x-1/2 z-50 w-full max-w-md">
+    <div class="bg-slate-800 border border-slate-600 rounded-xl shadow-2xl overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-700/50">
+        <input id="cmd-input" type="text" placeholder="Jump to account or action..."
+          class="w-full bg-transparent text-sm text-white placeholder-slate-500 outline-none"
+          autocomplete="off" spellcheck="false">
+      </div>
+      <div id="cmd-results" class="max-h-64 overflow-y-auto py-1"></div>
+    </div>
+  </div>
+
+  <!-- Error toast container -->
+  <div id="toast-container" class="fixed top-16 right-4 z-50 space-y-2" aria-live="polite"></div>
+
+  <script src="/static/batch.js?v=2"></script>
+  <script>
+  (function() {
+    // --- Lucide icons ---
+    lucide.createIcons();
+    document.body.addEventListener('htmx:afterSettle', function() { lucide.createIcons(); });
+
+    // --- Open in new tab helper (for keyboard shortcuts & batch actions) ---
+    window.openInBackground = function(url) {
+      window.open(url, '_blank');
+    };
+
+    // --- Card quick-action helpers ---
+    window.computeSnoozeUntil = function(preset) {
+      var now = new Date();
+      var target;
+      if (preset === 'tomorrow') {
+        target = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 9, 0);
+      } else if (preset === 'monday') {
+        var daysUntilMonday = (8 - now.getDay()) % 7 || 7;
+        target = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysUntilMonday, 9, 0);
+      } else if (preset === 'nextweek') {
+        target = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7, 9, 0);
+      }
+      return target ? target.toISOString() : null;
+    };
+
+    window.cardDismiss = function(taskId, accountId) {
+      if (!confirm('Dismiss this task? You can restore it later via the Dismissed filter.')) return;
+      fetch('/accounts/' + accountId + '/tasks/' + taskId + '/dismiss', { method: 'POST' })
+        .then(function(r) { if (r.ok) document.body.dispatchEvent(new Event('taskHidden')); else showErrorToast('Failed to dismiss task (' + r.status + ')'); })
+        .catch(function() { showErrorToast('Failed to dismiss task (network error)'); });
+    };
+
+    window.cardSnooze = function(taskId, accountId, preset) {
+      var until = window.computeSnoozeUntil(preset);
+      if (!until) return;
+      var body = new URLSearchParams();
+      body.append('until', until);
+      fetch('/accounts/' + accountId + '/tasks/' + taskId + '/snooze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString()
+      }).then(function(r) { if (r.ok) document.body.dispatchEvent(new Event('taskHidden')); else showErrorToast('Failed to snooze task (' + r.status + ')'); })
+        .catch(function() { showErrorToast('Failed to snooze task (network error)'); });
+    };
+
+    window.toggleCardSnooze = function(event, taskId) {
+      event.stopPropagation();
+      // Close all other open dropdowns
+      document.querySelectorAll('.card-snooze-dropdown').forEach(function(el) {
+        if (el.id !== 'card-snooze-' + taskId) el.classList.add('hidden');
+      });
+      var dd = document.getElementById('card-snooze-' + taskId);
+      if (dd) dd.classList.toggle('hidden');
+    };
+
+    // Close card snooze dropdowns on click-outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.card-snooze-dropdown') && !e.target.closest('.card-snooze-trigger')) {
+        document.querySelectorAll('.card-snooze-dropdown').forEach(function(el) { el.classList.add('hidden'); });
+      }
+    });
+
+    // --- Error toast ---
+    window.showErrorToast = function(msg) {
+      var toast = document.createElement('div');
+      toast.className = 'bg-rose-900 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg max-w-sm';
+      toast.textContent = msg;
+      var container = document.getElementById('toast-container');
+      if (container) container.appendChild(toast);
+      setTimeout(function() { toast.remove(); }, 5000);
+    };
+
+    document.body.addEventListener('htmx:responseError', function(evt) {
+      var msg = 'Request failed';
+      if (evt.detail && evt.detail.xhr) {
+        var xhr = evt.detail.xhr;
+        var detail = '';
+        try {
+          var json = JSON.parse(xhr.responseText);
+          detail = json.error || json.detail || '';
+        } catch (_) {
+          detail = (xhr.responseText || '').substring(0, 200);
+        }
+        msg = 'Error ' + xhr.status + ': ' + (detail || xhr.statusText || 'Request failed');
+      }
+      showErrorToast(msg);
+    });
+
+    // --- Command Palette ---
+    var paletteOverlay = document.getElementById('cmd-palette-overlay');
+    var palette = document.getElementById('cmd-palette');
+    var cmdInput = document.getElementById('cmd-input');
+    var cmdResults = document.getElementById('cmd-results');
+    var paletteOpen = false;
+    window._paletteOpen = false;
+    var paletteIndex = 0;
+
+    var navAccounts = {{ get_nav_accounts() | tojson }};
+    var navItems = navAccounts.map(function(a) { return { label: a.name, url: '/accounts/' + a.id, type: 'Acct' }; });
+    navItems.push({ label: 'Go to Briefing', url: '/briefing', type: 'Nav' });
+    navItems.push({ label: 'Go to Dashboard', url: '/', type: 'Nav' });
+    navItems.push({ label: 'Go to Settings', url: '/settings', type: 'Nav' });
+    navItems.push({ label: 'User Manual', url: '/manual', type: 'Nav' });
+    navItems.push({ label: 'Trigger Poll', url: '__poll__', type: 'Action' });
+
+    function openPalette() {
+      paletteOpen = true;
+      window._paletteOpen = true;
+      paletteOverlay.classList.remove('hidden');
+      palette.classList.remove('hidden');
+      cmdInput.value = '';
+      cmdInput.focus();
+      paletteIndex = 0;
+      renderPaletteResults('');
+    }
+
+    window.closePalette = function() {
+      paletteOpen = false;
+      window._paletteOpen = false;
+      paletteOverlay.classList.add('hidden');
+      palette.classList.add('hidden');
+    };
+
+    function renderPaletteResults(query) {
+      var q = query.toLowerCase().trim();
+      var filtered = q ? navItems.filter(function(item) { return item.label.toLowerCase().indexOf(q) !== -1; }) : navItems;
+      paletteIndex = Math.min(paletteIndex, Math.max(0, filtered.length - 1));
+      cmdResults.innerHTML = filtered.map(function(item, i) {
+        var active = i === paletteIndex;
+        return '<div class="px-4 py-2 flex items-center justify-between cursor-pointer text-sm ' +
+          (active ? 'bg-blue-800/50 text-white' : 'text-slate-300 hover:bg-slate-700/50') +
+          '" data-idx="' + i + '" onclick="selectPaletteItem(' + i + ')">' +
+          '<span>' + item.label + '</span>' +
+          '<span class="text-xs text-slate-500">' + item.type + '</span></div>';
+      }).join('');
+      window._paletteFiltered = filtered;
+    }
+
+    window.selectPaletteItem = function(idx) {
+      var filtered = window._paletteFiltered || [];
+      if (idx >= 0 && idx < filtered.length) {
+        var item = filtered[idx];
+        closePalette();
+        if (item.url === '__poll__') {
+          fetch('/api/radar/refresh', { method: 'POST' });
+          document.body.dispatchEvent(new Event('pollTriggered'));
+        } else {
+          window.location.href = item.url;
+        }
+      }
+    };
+
+    cmdInput.addEventListener('input', function() {
+      paletteIndex = 0;
+      renderPaletteResults(this.value);
+    });
+
+    cmdInput.addEventListener('keydown', function(e) {
+      var filtered = window._paletteFiltered || [];
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        paletteIndex = Math.min(paletteIndex + 1, filtered.length - 1);
+        renderPaletteResults(cmdInput.value);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        paletteIndex = Math.max(paletteIndex - 1, 0);
+        renderPaletteResults(cmdInput.value);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        selectPaletteItem(paletteIndex);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closePalette();
+      }
+    });
+
+    // --- Global keyboard shortcuts ---
+    var gPending = false;
+    var gTimer = null;
+
+    document.addEventListener('keydown', function(e) {
+      var tag = (e.target.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) return;
+      if (paletteOpen) return;
+
+      // Two-key sequences: g + b/d/s
+      if (gPending) {
+        gPending = false;
+        clearTimeout(gTimer);
+        e.stopImmediatePropagation();
+        if (e.key === 'b') { e.preventDefault(); window.location.href = '/briefing'; return; }
+        if (e.key === 'd') { e.preventDefault(); window.location.href = '/'; return; }
+        if (e.key === 's') { e.preventDefault(); window.location.href = '/settings'; return; }
+        if (e.key === 'h') { e.preventDefault(); window.location.href = '/manual'; return; }
+        return;
+      }
+
+      if (e.key === 'g' && !e.ctrlKey && !e.metaKey) {
+        e.stopImmediatePropagation();
+        gPending = true;
+        gTimer = setTimeout(function() { gPending = false; }, 500);
+        return;
+      }
+
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        openPalette();
+        return;
+      }
+
+      if (e.key === 'p' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        fetch('/api/radar/refresh', { method: 'POST' });
+        document.body.dispatchEvent(new Event('pollTriggered'));
+        var toast = document.createElement('div');
+        toast.className = 'bg-slate-800 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg border border-slate-700';
+        toast.textContent = 'Poll started — dashboard will refresh automatically';
+        var container = document.getElementById('toast-container');
+        container.appendChild(toast);
+        setTimeout(function() { toast.remove(); }, 3000);
+        return;
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

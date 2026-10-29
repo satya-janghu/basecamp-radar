@@ -1,0 +1,418 @@
+{% extends "base.html" %}
+
+{% block title %}Morning Briefing — Basecamp Radar{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+  <!-- Header -->
+  <div>
+    <h1 class="text-xl font-bold text-white">Morning Briefing — {{ today.strftime('%b %-d') }}</h1>
+    <p class="text-sm text-slate-400 mt-0.5">{{ task_count }} task{{ "s" if task_count != 1 else "" }} need{{ "" if task_count != 1 else "s" }} attention</p>
+  </div>
+
+  <!-- Filter pills -->
+  <div class="flex flex-wrap gap-1.5" id="smart-filters">
+    {% set filter_pills = [
+      ("ball_with_me", "Ball with Me"),
+      ("blocker", "Blockers"),
+      ("stale7", "Stale 7d+"),
+      ("approval", "Needs Approval"),
+      ("starred", "Starred"),
+      ("upvoted", "Upvoted"),
+      ("downvoted", "Downvoted"),
+      ("dismissed", "Dismissed"),
+      ("snoozed", "Snoozed"),
+    ] %}
+    {% for value, label in filter_pills %}
+    <button type="button" data-filter="{{ value }}"
+      class="smart-filter-pill px-2.5 py-1 text-xs rounded-lg border transition-colors text-slate-400 border-slate-700 hover:text-slate-200 hover:border-slate-600"
+      onclick="toggleBriefingFilter(this)">{{ label }}</button>
+    {% endfor %}
+    <button type="button" id="clear-filters-btn" onclick="clearBriefingFilters()" style="display:none"
+      class="px-2.5 py-1 text-xs rounded-lg text-slate-500 hover:text-slate-300 transition-colors">Clear</button>
+  </div>
+
+  <!-- Content: task list + detail panel -->
+  <div class="flex gap-6" style="min-height: 400px;">
+    <!-- Left panel: task list -->
+    <div class="flex-1 min-w-0">
+      <div id="task-list" class="space-y-2">
+        {% include "partials/briefing_task_list.html" %}
+      </div>
+    </div>
+
+    <!-- Right panel: task detail (desktop: sticky sidebar) -->
+    <div id="task-detail" class="hidden lg:block w-[45%] flex-shrink-0">
+      <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 text-center sticky top-20">
+        <p class="text-slate-400 text-sm">Select a task to view details</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Batch selection floating action bar -->
+<div id="batch-bar" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-800 border border-slate-600 rounded-xl px-4 py-2.5 shadow-xl flex items-center gap-3">
+  <span id="batch-count" class="text-sm text-white font-medium">0 selected</span>
+  <button type="button" onclick="batchOpenInBC()" class="px-3 py-1.5 text-xs bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors">Open in BC</button>
+  <button type="button" onclick="batchStar(true)" class="px-3 py-1.5 text-xs text-amber-300 border border-amber-500/30 rounded-lg hover:bg-amber-500/15 transition-colors">Star All</button>
+  <button type="button" onclick="batchStar(false)" class="px-3 py-1.5 text-xs text-slate-300 border border-slate-700 rounded-lg hover:bg-slate-700/50 transition-colors">Unstar All</button>
+  <div class="w-px h-5 bg-slate-600"></div>
+  <button type="button" onclick="batchVote(1)" class="px-3 py-1.5 text-xs text-teal-400 border border-teal-500/30 rounded-lg hover:bg-teal-500/15 transition-colors">Upvote</button>
+  <button type="button" onclick="batchVote(-1)" class="px-3 py-1.5 text-xs text-rose-300 border border-rose-500/30 rounded-lg hover:bg-rose-500/15 transition-colors">Downvote</button>
+  <div class="w-px h-5 bg-slate-600"></div>
+  <button type="button" onclick="batchDismiss()" class="px-3 py-1.5 text-xs text-rose-300 border border-rose-500/30 rounded-lg hover:bg-rose-500/15 transition-colors">Dismiss</button>
+  <div id="batch-snooze-wrapper" class="relative">
+    <button type="button" onclick="toggleBatchSnooze()" class="px-3 py-1.5 text-xs text-amber-300 border border-amber-500/30 rounded-lg hover:bg-amber-500/15 transition-colors">Snooze &#9662;</button>
+    <div id="batch-snooze-dropdown" class="hidden absolute bottom-full mb-2 left-0 bg-slate-800 border border-slate-600 rounded-lg shadow-xl py-1 w-44 z-50">
+      <button type="button" onclick="batchSnooze('tomorrow')" class="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-700 transition-colors">Tomorrow 9am</button>
+      <button type="button" onclick="batchSnooze('monday')" class="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-700 transition-colors">Next Monday 9am</button>
+      <button type="button" onclick="batchSnooze('nextweek')" class="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-700 transition-colors">In 1 week</button>
+    </div>
+  </div>
+  <button type="button" onclick="exitSelectionMode()" class="px-2 py-1.5 text-xs text-slate-400 hover:text-white transition-colors" aria-label="Exit selection mode">&times;</button>
+</div>
+
+<!-- Skeleton templates (hidden, used by JS) -->
+<template id="skeleton-task-list">
+  {% include "partials/skeleton_task_list.html" %}
+</template>
+<template id="skeleton-task-detail">
+  {% include "partials/skeleton_task_detail.html" %}
+</template>
+
+<!-- Mobile drawer overlay -->
+<div id="drawer-overlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden" onclick="closeDrawer()"></div>
+
+<!-- Mobile drawer panel -->
+<div id="drawer-panel" class="fixed inset-y-0 right-0 w-[85vw] max-w-md z-50 bg-slate-950 border-l border-slate-700/50 overflow-y-auto transform translate-x-full transition-transform duration-300 ease-in-out lg:hidden">
+  <div id="drawer-content" class="p-4"></div>
+</div>
+
+<!-- Keyboard shortcut help panel -->
+<div id="kb-help" class="hidden fixed bottom-4 right-4 z-50 bg-slate-800 border border-slate-700/50 rounded-xl p-4 shadow-xl max-w-xs">
+  <div class="flex items-center justify-between mb-3">
+    <h3 class="text-sm font-semibold text-white">Keyboard Shortcuts</h3>
+    <button onclick="toggleHelp()" class="text-slate-300 hover:text-white text-xs">Close</button>
+  </div>
+  <div class="space-y-1.5 text-xs">
+    <div class="flex items-center justify-between"><span class="text-slate-300">Navigate down</span><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-slate-400 font-mono">j</kbd></div>
+    <div class="flex items-center justify-between"><span class="text-slate-300">Navigate up</span><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-slate-400 font-mono">k</kbd></div>
+    <div class="flex items-center justify-between"><span class="text-slate-300">Open detail</span><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-slate-400 font-mono">Enter</kbd></div>
+    <div class="flex items-center justify-between"><span class="text-slate-300">Close / deselect</span><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-slate-400 font-mono">Esc</kbd></div>
+    <div class="flex items-center justify-between"><span class="text-slate-300">Open in Basecamp</span><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-slate-400 font-mono">o</kbd></div>
+    <div class="flex items-center justify-between"><span class="text-slate-300">Refresh task</span><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-slate-400 font-mono">r</kbd></div>
+    <div class="flex items-center justify-between"><span class="text-slate-300">Toggle star</span><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-slate-400 font-mono">s</kbd></div>
+    <div class="flex items-center justify-between"><span class="text-slate-300">Dismiss task</span><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-slate-400 font-mono">d</kbd></div>
+    <div class="flex items-center justify-between"><span class="text-slate-300">Select mode / toggle</span><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-slate-400 font-mono">x</kbd></div>
+    <div class="flex items-center justify-between"><span class="text-slate-300">Range select</span><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-slate-400 font-mono">Shift+x</kbd></div>
+    <div class="flex items-center justify-between"><span class="text-slate-300">Toggle help</span><kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-slate-400 font-mono">?</kbd></div>
+  </div>
+</div>
+
+<!-- Keyboard hint button -->
+<button id="kb-hint" onclick="toggleHelp()" class="fixed bottom-4 right-4 z-40 w-8 h-8 bg-slate-800 border border-slate-700/50 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-600 transition-colors text-sm font-mono" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+
+<script>
+(function() {
+  // --- Briefing filters (with URL persistence) ---
+  var initFilters = new URLSearchParams(window.location.search).get('filters');
+  var activeFilters = new Set(initFilters ? initFilters.split(',').filter(Boolean) : []);
+  // Apply active state to pills on page load
+  activeFilters.forEach(function(f) {
+    var btn = document.querySelector('.smart-filter-pill[data-filter="' + f + '"]');
+    if (btn) {
+      btn.classList.add('bg-blue-800', 'text-white', 'border-blue-700');
+      btn.classList.remove('text-slate-400', 'border-slate-700');
+    }
+  });
+
+  window.toggleBriefingFilter = function(btn) {
+    var f = btn.dataset.filter;
+    if (activeFilters.has(f)) {
+      activeFilters.delete(f);
+      btn.classList.remove('bg-blue-800', 'text-white', 'border-blue-700');
+      btn.classList.add('text-slate-400', 'border-slate-700');
+    } else {
+      activeFilters.add(f);
+      btn.classList.add('bg-blue-800', 'text-white', 'border-blue-700');
+      btn.classList.remove('text-slate-400', 'border-slate-700');
+    }
+    syncFilterUrl();
+    updateClearBtn();
+    refreshBriefingList();
+  };
+
+  window.clearBriefingFilters = function() {
+    activeFilters.clear();
+    document.querySelectorAll('.smart-filter-pill').forEach(function(btn) {
+      btn.classList.remove('bg-blue-800', 'text-white', 'border-blue-700');
+      btn.classList.add('text-slate-400', 'border-slate-700');
+    });
+    syncFilterUrl();
+    updateClearBtn();
+    refreshBriefingList();
+  };
+
+  function buildBriefingUrl() {
+    var url = '/briefing/tasks';
+    if (activeFilters.size > 0) url += '?filters=' + Array.from(activeFilters).join(',');
+    return url;
+  }
+
+  function refreshBriefingList() {
+    htmx.ajax('GET', buildBriefingUrl(), '#task-list');
+  }
+
+  function syncFilterUrl() {
+    var params = new URLSearchParams(window.location.search);
+    if (activeFilters.size > 0) params.set('filters', Array.from(activeFilters).join(','));
+    else params.delete('filters');
+    var qs = params.toString();
+    history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : ''));
+  }
+
+  // Batch refresh hook: return current briefing task list URL for HTMX swap
+  window._batchRefreshUrl = buildBriefingUrl;
+
+  // Show/hide Clear button based on active filters
+  function updateClearBtn() {
+    var btn = document.getElementById('clear-filters-btn');
+    if (btn) btn.style.display = activeFilters.size > 0 ? '' : 'none';
+  }
+  updateClearBtn();
+
+  // --- Drawer ---
+  var overlay = document.getElementById('drawer-overlay');
+  var panel = document.getElementById('drawer-panel');
+  var drawerContent = document.getElementById('drawer-content');
+
+  function openDrawer() {
+    overlay.classList.remove('hidden');
+    panel.classList.remove('translate-x-full');
+    panel.classList.add('translate-x-0');
+    document.body.classList.add('overflow-hidden');
+  }
+
+  function closeDrawer() {
+    panel.classList.remove('translate-x-0');
+    panel.classList.add('translate-x-full');
+    overlay.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+  }
+
+  window.openDrawer = openDrawer;
+  window.closeDrawer = closeDrawer;
+
+  // --- Skeleton loading ---
+  document.body.addEventListener('htmx:beforeRequest', function(evt) {
+    var target = evt.detail.target;
+    if (!target) return;
+    if (target.id === 'task-list') {
+      var skel = document.getElementById('skeleton-task-list');
+      if (skel) target.innerHTML = skel.innerHTML;
+    } else if (target.id === 'task-detail') {
+      var skel = document.getElementById('skeleton-task-detail');
+      if (skel) target.innerHTML = skel.innerHTML;
+      target.classList.remove('hidden');
+      target.classList.add('block');
+    }
+  });
+
+  // --- After swap: drawer on mobile ---
+  document.body.addEventListener('htmx:afterSwap', function(evt) {
+    if (evt.detail.target && evt.detail.target.id === 'task-detail') {
+      if (window.innerWidth < 1024) {
+        drawerContent.innerHTML = evt.detail.target.innerHTML;
+        openDrawer();
+      }
+    }
+  });
+
+  // --- Keyboard help ---
+  var helpPanel = document.getElementById('kb-help');
+  var hintBtn = document.getElementById('kb-hint');
+  window.toggleHelp = function() {
+    var isHidden = helpPanel.classList.toggle('hidden');
+    hintBtn.classList.toggle('hidden', !isHidden);
+  };
+
+  // --- Keyboard navigation ---
+  var selectedIndex = -1;
+  var RING_CLASS = 'ring-2';
+  var RING_COLOR = 'ring-blue-500/70';
+
+  function getCards() {
+    return Array.from(document.querySelectorAll('#task-list > [data-task-id]'));
+  }
+
+  function clearSelection(cards) {
+    (cards || getCards()).forEach(function(c) {
+      c.classList.remove(RING_CLASS, RING_COLOR);
+    });
+  }
+
+  function selectCard(index, cards) {
+    cards = cards || getCards();
+    if (cards.length === 0) return;
+    clearSelection(cards);
+    selectedIndex = Math.max(0, Math.min(index, cards.length - 1));
+    var card = cards[selectedIndex];
+    card.classList.add(RING_CLASS, RING_COLOR);
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  document.body.addEventListener('htmx:afterSwap', function(evt) {
+    if (evt.detail.target && evt.detail.target.id === 'task-list') {
+      selectedIndex = -1;
+      clearSelection();
+      if (window.resetBatchAnchor) window.resetBatchAnchor();
+    }
+  });
+
+  // Re-apply ring after card outerHTML swaps (star/vote replaces the card div)
+  document.body.addEventListener('htmx:afterSettle', function(evt) {
+    if (selectedIndex < 0) return;
+    var target = evt.detail.target;
+    if (!target || !target.closest || !target.closest('#task-list')) return;
+    if (target.id === 'task-list') return;  // full list swap, not card swap
+    var cards = getCards();
+    if (selectedIndex < cards.length) {
+      cards[selectedIndex].classList.add(RING_CLASS, RING_COLOR);
+    }
+  });
+
+  // Sync selectedIndex on mouse click
+  document.getElementById('task-list').addEventListener('click', function(e) {
+    var card = e.target.closest('div[data-task-id]');
+    if (!card) return;
+    var cards = getCards();
+    var idx = cards.indexOf(card);
+    if (idx !== -1) selectedIndex = idx;
+  });
+
+  document.addEventListener('keydown', function(e) {
+    var tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) return;
+    if (window._paletteOpen) return;
+
+    var cards = getCards();
+    switch (e.key) {
+      case 'j':
+        e.preventDefault();
+        selectCard(selectedIndex + 1);
+        break;
+      case 'k':
+        e.preventDefault();
+        selectCard(selectedIndex - 1);
+        break;
+      case 'Enter':
+        if (selectedIndex >= 0 && selectedIndex < cards.length) {
+          e.preventDefault();
+          cards[selectedIndex].click();
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        if (window.isSelectionMode()) {
+          exitSelectionMode();
+        } else if (!helpPanel.classList.contains('hidden')) {
+          toggleHelp();
+        } else if (window.innerWidth < 1024 && !panel.classList.contains('translate-x-full')) {
+          closeDrawer();
+        } else {
+          clearSelection();
+          selectedIndex = -1;
+          var detail = document.getElementById('task-detail');
+          if (detail) {
+            detail.innerHTML = '<div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 text-center sticky top-20"><p class="text-slate-400 text-sm">Select a task to view details</p></div>';
+          }
+        }
+        break;
+      case 'o':
+        if (selectedIndex >= 0 && selectedIndex < cards.length) {
+          var url = cards[selectedIndex].dataset.taskUrl;
+          if (url) openInBackground(url);
+        }
+        break;
+      case 'r':
+        if (selectedIndex >= 0 && selectedIndex < cards.length) {
+          var refreshBtn = document.querySelector('#task-detail button[hx-post*="/refresh"]');
+          if (refreshBtn) refreshBtn.click();
+        }
+        break;
+      case 's':
+        if (selectedIndex >= 0 && selectedIndex < cards.length) {
+          var starBtn = cards[selectedIndex].querySelector('button[hx-post*="/star"]');
+          if (starBtn) starBtn.click();
+        }
+        break;
+      case 'd':
+        if (selectedIndex >= 0 && selectedIndex < cards.length) {
+          var dismissBtn = document.querySelector('#task-detail button[hx-post*="/dismiss"]');
+          if (dismissBtn) dismissBtn.click();
+        }
+        break;
+      case 'x': case 'X':
+        window.batchKeyHandler(e, selectedIndex);
+        break;
+      case '?':
+        e.preventDefault();
+        toggleHelp();
+        break;
+    }
+  });
+
+  // --- Dismiss/Snooze event handlers ---
+  document.body.addEventListener('taskHidden', function() {
+    refreshBriefingList();
+    var detail = document.getElementById('task-detail');
+    if (detail) detail.innerHTML = '<div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 text-center sticky top-20"><p class="text-slate-400 text-sm">Select a task to view details</p></div>';
+    selectedIndex = -1;
+    if (window.innerWidth < 1024) closeDrawer();
+  });
+  document.body.addEventListener('taskRestored', function() {
+    refreshBriefingList();
+  });
+
+  // --- Snooze form helpers ---
+  window.toggleSnoozeForm = function(taskId) {
+    var form = document.getElementById('snooze-form-' + taskId);
+    if (form) form.classList.toggle('hidden');
+  };
+
+  window.setSnoozePreset = function(btn, preset) {
+    var form = btn.closest('[id^="snooze-form-"]');
+    if (!form) return;
+    var input = form.querySelector('.snooze-input');
+    if (!input) return;
+    var now = new Date();
+    var target;
+    if (preset === 'tomorrow') {
+      target = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 9, 0);
+    } else if (preset === 'monday') {
+      var daysUntilMonday = (8 - now.getDay()) % 7 || 7;
+      target = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysUntilMonday, 9, 0);
+    } else if (preset === 'nextweek') {
+      target = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7, 9, 0);
+    }
+    if (target) {
+      var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
+      input.value = target.getFullYear() + '-' + pad(target.getMonth()+1) + '-' + pad(target.getDate()) + 'T' + pad(target.getHours()) + ':' + pad(target.getMinutes());
+    }
+  };
+
+  // Convert local datetime to UTC ISO string before snooze POST
+  document.body.addEventListener('htmx:configRequest', function(evt) {
+    var form = evt.detail.elt;
+    if (!form || !form.closest || !form.getAttribute('hx-post') || form.getAttribute('hx-post').indexOf('/snooze') === -1) return;
+    var params = evt.detail.parameters;
+    if (params.until) {
+      var local = new Date(params.until);
+      if (!isNaN(local.getTime())) {
+        params.until = local.toISOString();
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}

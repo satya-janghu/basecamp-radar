@@ -1,0 +1,10 @@
+{% if tasks %}
+{% for task in tasks %}
+{% include "partials/task_card.html" %}
+{% endfor %}
+{% else %}
+<div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-8 text-center">
+  <p class="text-slate-300 text-sm">No tasks in this view.</p>
+  <p class="text-slate-400 text-xs mt-2">Tasks will appear here once the poller discovers open threads.</p>
+</div>
+{% endif %}

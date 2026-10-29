@@ -1,0 +1,56 @@
+{#- Tier color macros — single source of truth for priority tier styling (5-tier system).
+    Usage: {% from "macros/tier.html" import tier_border, tier_bg, tier_text, tier_badge, tier_label %} -#}
+
+{%- macro tier_border(tier) -%}
+{%- if tier == 'critical' -%}border-l-rose-500{%- elif tier == 'high' -%}border-l-orange-500{%- elif tier == 'medium' -%}border-l-amber-500{%- elif tier == 'low' -%}border-l-teal-500{%- elif tier == 'minimal' -%}border-l-slate-600{%- else -%}border-l-slate-600{%- endif -%}
+{%- endmacro -%}
+
+{%- macro tier_bg(tier) -%}
+{%- if tier == 'critical' -%}bg-rose-500/15{%- elif tier == 'high' -%}bg-orange-500/15{%- elif tier == 'medium' -%}bg-amber-500/15{%- elif tier == 'low' -%}bg-teal-500/15{%- elif tier == 'minimal' -%}bg-slate-500/15{%- else -%}bg-slate-600/50{%- endif -%}
+{%- endmacro -%}
+
+{%- macro tier_text(tier) -%}
+{%- if tier == 'critical' -%}text-rose-300{%- elif tier == 'high' -%}text-orange-300{%- elif tier == 'medium' -%}text-amber-300{%- elif tier == 'low' -%}text-teal-400{%- elif tier == 'minimal' -%}text-slate-400{%- else -%}text-slate-300{%- endif -%}
+{%- endmacro -%}
+
+{%- macro tier_rec_bg(tier) -%}
+{%- if tier == 'critical' -%}bg-rose-500/10 text-rose-300{%- elif tier == 'high' -%}bg-orange-500/10 text-orange-200/80{%- elif tier == 'medium' -%}bg-amber-500/10 text-amber-200/80{%- elif tier == 'low' -%}bg-teal-500/10 text-teal-300{%- else -%}bg-slate-500/10 text-slate-300{%- endif -%}
+{%- endmacro -%}
+
+{%- macro tier_label(tier) -%}
+{%- if tier == 'critical' -%}Critical{%- elif tier == 'high' -%}High{%- elif tier == 'medium' -%}Medium{%- elif tier == 'low' -%}Low{%- elif tier == 'minimal' -%}Minimal{%- else -%}Unknown{%- endif -%}
+{%- endmacro -%}
+
+{%- macro tier_badge(score, tier, previous_score=none) -%}
+<div class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold relative {{ tier_bg(tier) }} {{ tier_text(tier) }}"
+  {% if previous_score is not none and previous_score != score %}title="Was {{ previous_score }}"{% endif %}>
+  {{ score or "—" }}
+  {% if previous_score is not none and previous_score != score %}
+  <span class="absolute -top-1 -right-1 text-xs leading-none
+    {% if score > previous_score %}text-rose-300{% else %}text-teal-400{% endif %}">
+    {% if score > previous_score %}&#9650;{% else %}&#9660;{% endif %}
+  </span>
+  {% endif %}
+</div>
+{%- endmacro -%}
+
+{%- macro tier_badge_lg(score, tier, previous_score=none) -%}
+<div class="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center text-lg font-bold relative {{ tier_bg(tier) }} {{ tier_text(tier) }}"
+  {% if previous_score is not none and previous_score != score %}title="Was {{ previous_score }}"{% endif %}>
+  {{ score or "—" }}
+  {% if previous_score is not none and previous_score != score %}
+  <span class="absolute -top-1 -right-1 text-xs leading-none
+    {% if score > previous_score %}text-rose-300{% else %}text-teal-400{% endif %}">
+    {% if score > previous_score %}&#9650;{% else %}&#9660;{% endif %}
+  </span>
+  {% endif %}
+</div>
+{%- endmacro -%}
+
+{%- macro analysis_badge(status) -%}
+{%- if status == 'pending' -%}
+<span class="px-1.5 py-0.5 text-xs bg-slate-600/50 text-slate-400 rounded-full border border-dashed border-slate-500/50">Pending</span>
+{%- elif status == 'partial' -%}
+<span class="px-1.5 py-0.5 text-xs bg-slate-600/50 text-slate-400 rounded-full border border-dashed border-slate-500/50">Partial</span>
+{%- endif -%}
+{%- endmacro -%}

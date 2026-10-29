@@ -1,0 +1,135 @@
+{% from "macros/tier.html" import tier_border, tier_bg, tier_text, tier_badge, tier_rec_bg, analysis_badge %}
+{% from "macros/icons.html" import star_filled, star_empty, thumb_up, thumb_up_filled, thumb_down, thumb_down_filled %}
+<div id="task-card-{{ task.id }}" class="group bg-slate-800/50 border border-slate-700/50 rounded-xl p-3 hover:border-slate-600/70 transition-colors cursor-pointer
+  border-l-2 {{ tier_border(task.priority_tier) }}"
+  hx-get="/accounts/{{ task.account_id }}/tasks/{{ task.id }}/detail"
+  hx-target="#task-detail"
+  hx-swap="innerHTML"
+  hx-trigger="click[!event.target.closest('.batch-checkbox')]"
+  data-task-id="{{ task.id }}"
+  data-task-url="{{ task.basecamp_url or '' }}">
+  <div class="flex items-start gap-3">
+    <!-- Selection checkbox (hidden by default, shown in selection mode) -->
+    <div class="batch-checkbox hidden flex-shrink-0 mt-1" onclick="event.stopPropagation()">
+      <input type="checkbox" class="batch-select-cb w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+        data-task-id="{{ task.id }}">
+    </div>
+    <!-- Star toggle -->
+    <button type="button"
+      hx-post="/accounts/{{ task.account_id }}/tasks/{{ task.id }}/star"
+      hx-target="#task-card-{{ task.id }}"
+      hx-swap="outerHTML"
+      onclick="event.stopPropagation()"
+      class="flex-shrink-0 mt-0.5 text-lg leading-none transition-colors {{ 'text-amber-400' if task.is_starred else 'text-slate-600 hover:text-slate-400' }}"
+      title="{{ 'Unstar' if task.is_starred else 'Star' }} task"
+      aria-label="{{ 'Unstar' if task.is_starred else 'Star' }} task">
+      {% if task.is_starred %}{{ star_filled("w-4 h-4") }}{% else %}{{ star_empty("w-4 h-4") }}{% endif %}
+    </button>
+    <!-- Score badge -->
+    {{ tier_badge(task.priority_score, task.priority_tier, task.previous_score) }}
+    <div class="flex-1 min-w-0">
+      <!-- Account name label -->
+      {% set acct = accounts_map.get(task.account_id) if accounts_map is defined else none %}
+      {% if acct %}
+      <div class="text-xs text-slate-500 mb-0.5 truncate">{{ acct.name }}</div>
+      {% endif %}
+      <div class="flex items-center gap-1.5">
+        {% if task.project_type == 'Joint' %}
+        <span class="text-xs text-blue-300 font-medium flex-shrink-0">J</span>
+        {% endif %}
+        <span class="text-sm text-white truncate">{{ task.title or "Untitled" }}</span>
+        {% if task.has_new_activity %}
+        <span class="flex-shrink-0 w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" title="New activity"></span>
+        {% endif %}
+        {% if task.analysis_status and task.analysis_status != 'complete' %}
+        {{ analysis_badge(task.analysis_status) }}
+        {% endif %}
+      </div>
+      <div class="flex items-center gap-3 mt-1 text-xs text-slate-400">
+        {% if task.ai_ball_with %}
+        <span>Ball: <span class="text-slate-300">{{ task.ai_ball_with }}</span></span>
+        {% endif %}
+        {% if task.ai_current_stage %}
+        <span>{{ task.ai_current_stage }}</span>
+        {% endif %}
+        {% if task.comment_count %}
+        <span>{{ task.comment_count }} comment{{ "s" if task.comment_count != 1 else "" }}</span>
+        {% endif %}
+        {% if task.dismissed_at %}
+        <span class="px-1.5 py-0.5 text-xs bg-slate-600/50 text-slate-400 rounded-full">Dismissed</span>
+        {% elif task.snoozed_until %}
+        <span class="px-1.5 py-0.5 text-xs bg-amber-500/15 text-amber-300 rounded-full">Snoozed</span>
+        {% endif %}
+        {% if task.score_breakdown and task.score_breakdown.get("staleness", {}).get("days", 0) >= 4 %}
+        {% set stale_d = task.score_breakdown.get("staleness", {}).get("days", 0) %}
+        <span class="{% if stale_d >= 60 %}text-slate-500 line-through{% elif stale_d >= 45 %}text-slate-500{% elif stale_d >= 8 %}text-rose-300{% if stale_d >= 15 %} font-bold{% endif %}{% elif stale_d >= 6 %}text-amber-400{% else %}text-slate-400{% endif %}">{{ stale_d }}d</span>
+        {% endif %}
+        {% if task.due_date %}
+        {% if today and task.due_date %}
+        {% set days_left = (task.due_date - today).days %}
+        <span class="{% if days_left <= 3 %}text-rose-300{% elif days_left <= 7 %}text-amber-400{% else %}text-slate-400{% endif %}">
+          Due {{ task.due_date.strftime('%b %d') }}{% if days_left <= 7 %} ({{ days_left }}d){% endif %}
+        </span>
+        {% else %}
+        <span class="text-slate-400">Due {{ task.due_date }}</span>
+        {% endif %}
+        {% endif %}
+      </div>
+      {% if task.ai_recommendation %}
+      <div class="mt-1.5 px-2 py-1 rounded text-xs {{ tier_rec_bg(task.priority_tier) }}">
+        {{ task.ai_recommendation }}
+      </div>
+      {% endif %}
+    </div>
+    <!-- Quick actions (visible on hover) -->
+    <div class="flex-shrink-0 flex items-center gap-0.5" onclick="event.stopPropagation()">
+      <button type="button"
+        hx-post="/accounts/{{ task.account_id }}/tasks/{{ task.id }}/vote"
+        hx-target="#task-card-{{ task.id }}"
+        hx-swap="outerHTML"
+        hx-vals='{"value": "1", "source": "briefing"}'
+        onclick="event.stopPropagation()"
+        class="p-1.5 rounded-lg transition-colors {{ 'text-teal-400' if task.vote == 1 else 'text-slate-500 hover:text-teal-400' }}"
+        title="{{ 'Remove upvote' if task.vote == 1 else 'Upvote' }}">
+        {% if task.vote == 1 %}{{ thumb_up_filled("w-3.5 h-3.5") }}{% else %}{{ thumb_up("w-3.5 h-3.5") }}{% endif %}
+      </button>
+      <button type="button"
+        hx-post="/accounts/{{ task.account_id }}/tasks/{{ task.id }}/vote"
+        hx-target="#task-card-{{ task.id }}"
+        hx-swap="outerHTML"
+        hx-vals='{"value": "-1", "source": "briefing"}'
+        onclick="event.stopPropagation()"
+        class="p-1.5 rounded-lg transition-colors {{ 'text-rose-400' if task.vote == -1 else 'text-slate-500 hover:text-rose-400' }}"
+        title="{{ 'Remove downvote' if task.vote == -1 else 'Downvote' }}">
+        {% if task.vote == -1 %}{{ thumb_down_filled("w-3.5 h-3.5") }}{% else %}{{ thumb_down("w-3.5 h-3.5") }}{% endif %}
+      </button>
+      {% if task.basecamp_url %}
+      <a href="{{ task.basecamp_url }}" target="_blank" rel="noopener"
+        onclick="event.stopPropagation()"
+        class="p-1.5 text-slate-500 hover:text-blue-300 rounded-lg hover:bg-slate-700/50 transition-colors" title="Open in Basecamp">
+        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+      </a>
+      {% endif %}
+      {% if not task.dismissed_at and not task.snoozed_until %}
+      <button type="button" onclick="event.stopPropagation(); cardDismiss('{{ task.id }}', '{{ task.account_id }}')"
+        class="p-1.5 text-slate-500 hover:text-rose-300 rounded-lg hover:bg-slate-700/50 transition-colors" title="Dismiss">
+        <i data-lucide="eye-off" class="w-3.5 h-3.5"></i>
+      </button>
+      <div class="relative">
+        <button type="button" onclick="toggleCardSnooze(event, '{{ task.id }}')"
+          class="card-snooze-trigger p-1.5 text-slate-500 hover:text-amber-300 rounded-lg hover:bg-slate-700/50 transition-colors" title="Snooze">
+          <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+        </button>
+        <div id="card-snooze-{{ task.id }}" class="card-snooze-dropdown hidden absolute right-0 top-full mt-1 z-20 bg-slate-800 border border-slate-600 rounded-lg shadow-xl py-1 w-40">
+          <button type="button" onclick="event.stopPropagation(); cardSnooze('{{ task.id }}', '{{ task.account_id }}', 'tomorrow')"
+            class="w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700/50 transition-colors">Tomorrow 9am</button>
+          <button type="button" onclick="event.stopPropagation(); cardSnooze('{{ task.id }}', '{{ task.account_id }}', 'monday')"
+            class="w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700/50 transition-colors">Next Monday 9am</button>
+          <button type="button" onclick="event.stopPropagation(); cardSnooze('{{ task.id }}', '{{ task.account_id }}', 'nextweek')"
+            class="w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700/50 transition-colors">In 1 week</button>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
